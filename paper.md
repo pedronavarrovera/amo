@@ -57,4 +57,5 @@ intangible tokens (Part I), 2 and the article Navarro Vera, P.J. In the Book Qua
 Guarded Cyber Currency for intangible tokens (Part II),3  are freely available and accessible 
 through a reserved DOI upon publication. The registered DOI for this study is: 
 10.5281/zenodo.15017650
-[Quantum-AI-Guarded Cyber Currency for intangible tokens](https://zenodo.org/records/15017650?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjRkNjJiMmI1LTJhZWMtNDQ4OC1hMGFiLThmYjdjYWI2YjVlZSIsImRhdGEiOnt9LCJyYW5kb20iOiIxMDFiMzc2ZTA2YTE4YWZkMzg0NTJjYzdjZmZlYmI2NCJ9.F5KK366RTed0v21XTaQzzlwno0XOS6qiswPTCZ3cyDqfe_E1xkn6rqxhB0Sr4-LAv5iqyb6-N2Ju1hY1QiW6qw)
+[navarro2025part1](https://zenodo.org/records/15017650?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjRkNjJiMmI1LTJhZWMtNDQ4OC1hMGFiLThmYjdjYWI2YjVlZSIsImRhdGEiOnt9LCJyYW5kb20iOiIxMDFiMzc2ZTA2YTE4YWZkMzg0NTJjYzdjZmZlYmI2NCJ9.F5KK366RTed0v21XTaQzzlwno0XOS6qiswPTCZ3cyDqfe_E1xkn6rqxhB0Sr4-LAv5iqyb6-N2Ju1hY1QiW6qw)
+[navarro2025part2](https://zenodo.org/records/15017650?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjRkNjJiMmI1LTJhZWMtNDQ4OC1hMGFiLThmYjdjYWI2YjVlZSIsImRhdGEiOnt9LCJyYW5kb20iOiIxMDFiMzc2ZTA2YTE4YWZkMzg0NTJjYzdjZmZlYmI2NCJ9.F5KK366RTed0v21XTaQzzlwno0XOS6qiswPTCZ3cyDqfe_E1xkn6rqxhB0Sr4-LAv5iqyb6-N2Ju1hY1QiW6qw)
