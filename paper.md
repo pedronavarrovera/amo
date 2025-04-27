@@ -49,10 +49,12 @@ No specific funding was reported.
 
 The author declares no conflicts of interest.
 
-# References
+# Materials
 
-::: references
-- Reilly, R.F., *Valuing Intangible Assets*, McGraw-Hill Library of Investment and Finance, 1999.
-- Navarro Vera, P.J., *Quantum-AI-Guarded Cyber Currency for intangible tokens (Part I)*, Zenodo, 2025, doi:10.5281/zenodo.15017650.
-- Navarro Vera, P.J., *Quantum-AI-Guarded Cyber Currency for intangible tokens (Part II)*, Zenodo, 2025, doi:10.5281/zenodo.15017650.
-:::
+All materials, data, computer code, and protocols associated with this publication 
+including the article Navarro Vera, P.J. In the Book Quantum-AI-Guarded Cyber Currency for 
+intangible tokens (Part I), 2 and the article Navarro Vera, P.J. In the Book Quantum-AI
+Guarded Cyber Currency for intangible tokens (Part II),3  are freely available and accessible 
+through a reserved DOI upon publication. The registered DOI for this study is: 
+10.5281/zenodo.15017650
+[Quantum-AI-Guarded Cyber Currency for intangible tokens](https://zenodo.org/records/15017650?preview=1&token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6IjRkNjJiMmI1LTJhZWMtNDQ4OC1hMGFiLThmYjdjYWI2YjVlZSIsImRhdGEiOnt9LCJyYW5kb20iOiIxMDFiMzc2ZTA2YTE4YWZkMzg0NTJjYzdjZmZlYmI2NCJ9.F5KK366RTed0v21XTaQzzlwno0XOS6qiswPTCZ3cyDqfe_E1xkn6rqxhB0Sr4-LAv5iqyb6-N2Ju1hY1QiW6qw)
