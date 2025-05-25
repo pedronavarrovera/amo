@@ -9,6 +9,25 @@
 # This code can be used in a way similar to a mathematical library.
 # Despite the total line of code (LOC) has been compressed below a thousand lines to be run on small arduinos with 32K of not expandable program memory . This code contains a substantial scholarly effort as it combines knowledge from multidisciplinary areas such as mathematics, social science, software engineering, etc.  
 # as described in the associated paper located in the file paper.md 
+#
+# Description of the core functionality
+#    Graph Modeling:
+#       Users are represented as nodes in a graph.
+#       The graph is modeled using adjacency matrices where edges carry random weights (transaction values).
+#   Pathfinding Algorithm:
+#       Uses Dijkstra’s algorithm to compute the shortest transaction path from a source user to all others.
+#       Outputs include: transaction source and destination, cost, currency symbol (@mo), and route
+#   Data Generation:
+#       Generates large datasets (e.g., 10,000 random networks of 100 users each) to simulate transactions
+#       The output is suitable for analysis and visualization (e.g., with Power BI).    
+#   Outputs:
+#       Each transaction simulation prints:
+#           Transaction ID
+#           Source and destination user IDs and names
+#           Distance (transaction cost)
+#           Currency unit (@mo)
+#           Shortest path (as sequence of nodes)
+
 
 import sys
 import numpy as np
@@ -118,6 +137,44 @@ node_names = {
     98: "Ramiro",
     99: "Lourdes"
 }
+def dijkstra_to_target(adjacency_matrix, start_vertex, destination_vertex, node_names):
+    n_vertices = len(adjacency_matrix[0])
+    shortest_distances = [sys.maxsize] * n_vertices
+    added = [False] * n_vertices
+    parents = [-1] * n_vertices
+
+    shortest_distances[start_vertex] = 0
+    parents[start_vertex] = NO_PARENT
+
+    for _ in range(n_vertices):
+        nearest_vertex = -1
+        shortest_distance = sys.maxsize
+
+        for vertex_index in range(n_vertices):
+            if not added[vertex_index] and shortest_distances[vertex_index] < shortest_distance:
+                nearest_vertex = vertex_index
+                shortest_distance = shortest_distances[vertex_index]
+
+        if nearest_vertex == -1:
+            break  # no reachable vertex
+
+        added[nearest_vertex] = True
+
+        if nearest_vertex == destination_vertex:
+            break  # destination reached
+
+        for vertex_index in range(n_vertices):
+            edge_distance = adjacency_matrix[nearest_vertex][vertex_index]
+            if edge_distance > 0 and shortest_distance + edge_distance < shortest_distances[vertex_index]:
+                shortest_distances[vertex_index] = shortest_distance + edge_distance
+                parents[vertex_index] = nearest_vertex
+
+    # Output
+    print("\nShortest path from", node_names[start_vertex], "to", node_names[destination_vertex])
+    print("Distance:", shortest_distances[destination_vertex], MONEDA)
+    print("Path: ", end="")
+    print_path(destination_vertex, parents, node_names)
+    print()
 
 
 def dijkstra(adjacency_matrix, start_vertex, node_names):
@@ -400,3 +457,5 @@ if __name__ == "__main__":
         # print("\nDeterminant of the adjacency matrix:")
         # print(int(det))
         dijkstra(array, 0, node_names)
+        #dijkstra_to_target(array, 0, 12, node_names)  # from Pedro to Valentina
+
