@@ -1,10 +1,126 @@
+# This software is Open Source as OSI definition.
+# Users can open issues and propose code changes without manual approval of (or payments for) accounts.
+# This sofware is a research application. You can find the paper associated in the file paper.md. The code solve complex problems in the contex of mathematics and social science to calculate payment transactions routes among users.
+# This code has been configured to support the generation of large datasets of random transaction data and supports the execution of reseach experiments in a social network of users.
+# This code supports the extraction of knowledge from a large dataset of random transaction data using Power BI data for visualisation and analysis as a research's Proof of Concept. 
+# The output for analysys includes: Transaction ID, origin and destination accounts, transaction value, and the corresponding shortest path.
+# The major contributor to the software is Pedro Juan Navarro Vera who owns the account pedronavarrovera and the public repository pedronavarrovera/amo in Github. 
+# The code can be cloned, browsed online and file tickets created by individuals as well as its issues tracked without registration.
+# This code can be used in a way similar to a mathematical library.
+# Despite the total line of code (LOC) has been compressed below a thousand lines to be run on small arduinos with 32K of not expandable program memory . This code contains a substantial scholarly effort as it combines knowledge from multidisciplinary areas such as mathematics, social science, software engineering, etc.  
+# as described in the associated paper located in the file paper.md 
+
 import sys
 import numpy as np
 
 NO_PARENT = -1
+MONEDA = "@mo"
+# define the names below
+node_names = {
+    0: "Pedro",
+    1: "Juan",
+    2: "Lucas",
+    3: "Sofia",
+    4: "Emma",
+    5: "Mateo",
+    6: "Olivia",
+    7: "Leo",
+    8: "Isabella",
+    9: "Noah",
+    10: "Camila",
+    11: "Liam",
+    12: "Valentina",
+    13: "Emma",
+    14: "Sebastian",
+    15: "Mia",
+    16: "Thiago",
+    17: "Martina",
+    18: "David",
+    19: "Lucia",
+    20: "Gabriel",
+    21: "Zoe",
+    22: "Daniel",
+    23: "Elena",
+    24: "Benjamín",
+    25: "Luna",
+    26: "Tomas",
+    27: "Aitana",
+    28: "Bruno",
+    29: "Sara",
+    30: "Dylan",
+    31: "Julia",
+    32: "Samuel",
+    33: "Carla",
+    34: "Diego",
+    35: "Irene",
+    36: "Gael",
+    37: "Chloe",
+    38: "Nicolas",
+    39: "Clara",
+    40: "Alex",
+    41: "Alma",
+    42: "Aaron",
+    43: "Paula",
+    44: "Hugo",
+    45: "Angela",
+    46: "Marco",
+    47: "Vera",
+    48: "Julian",
+    49: "Ariadna",
+    50: "Andres",
+    51: "Lia",
+    52: "Ian",
+    53: "Marta",
+    54: "Axel",
+    55: "Nora",
+    56: "Rodrigo",
+    57: "Lola",
+    58: "Adrian",
+    59: "Blanca",
+    60: "Cristian",
+    61: "Celia",
+    62: "Pablo",
+    63: "Milena",
+    64: "Iker",
+    65: "Elsa",
+    66: "Raul",
+    67: "Jimena",
+    68: "Fernando",
+    69: "Naia",
+    70: "Javier",
+    71: "Candela",
+    72: "Erik",
+    73: "Violeta",
+    74: "Maximo",
+    75: "Belen",
+    76: "Alvaro",
+    77: "Marina",
+    78: "Esteban",
+    79: "Isabel",
+    80: "Santiago",
+    81: "Carmen",
+    82: "Jose",
+    83: "Amaya",
+    84: "Renato",
+    85: "Gabriela",
+    86: "Cristobal",
+    87: "Natalia",
+    88: "Mauricio",
+    89: "Bianca",
+    90: "Ignacio",
+    91: "Selena",
+    92: "Eduardo",
+    93: "Alicia",
+    94: "Martin",
+    95: "Florencia",
+    96: "Rafael",
+    97: "Daniela",
+    98: "Ramiro",
+    99: "Lourdes"
+}
 
 
-def dijkstra(adjacency_matrix, start_vertex):
+def dijkstra(adjacency_matrix, start_vertex, node_names):
     n_vertices = len(adjacency_matrix[0])
 
     # shortest_distances[i] will hold the
@@ -70,13 +186,13 @@ def dijkstra(adjacency_matrix, start_vertex):
                 parents[vertex_index] = nearest_vertex
                 shortest_distances[vertex_index] = shortest_distance + edge_distance
 
-    print_solution(start_vertex, shortest_distances, parents)
+    print_solution(start_vertex, shortest_distances, parents, node_names)
 
 
 # A utility function to print
 # the constructed distances
 # array and shortest paths
-def print_solution(start_vertex, distances, parents):
+def print_solution(start_vertex, distances, parents, node_names):
     n_vertices = len(distances)
     #    print("Index\t Vertex\t Distance\tPath")
 
@@ -92,30 +208,38 @@ def print_solution(start_vertex, distances, parents):
                 vertex_index,
                 ",",
                 "\t\t",
+                node_names[start_vertex],
+                "->",
+                node_names[vertex_index],
+                ",",            
+                "\t\t",
                 distances[vertex_index],
-                ",",
+                ",",            
+                "\t\t",
+                MONEDA,
+                ",",                
                 "\t\t",
                 end="",
             )
-            print_path(vertex_index, parents)
+            print_path(vertex_index, parents, node_names)
             print(",")
 
 
 # Function to print shortest path
 # from source to current_vertex
 # using parents array
-def print_path(current_vertex, parents):
+def print_path(current_vertex, parents, node_names):
     # Base case : Source node has
     # been processed
     if current_vertex == NO_PARENT:
         return
-    print_path(parents[current_vertex], parents)
-    print(current_vertex, end=" ")
+    print_path(parents[current_vertex], parents, node_names)
+    print(current_vertex, node_names[current_vertex], end=" ")
 
 
 # Driver code
 if __name__ == "__main__":
-    adjacency_matrix_example = [
+    adjacency_matrix_example9x9 = [
         [0, 4, 0, 0, 0, 0, 0, 8, 0],
         [4, 0, 8, 0, 0, 0, 0, 11, 0],
         [0, 8, 0, 7, 0, 4, 0, 0, 2],
@@ -126,8 +250,142 @@ if __name__ == "__main__":
         [8, 11, 0, 0, 0, 0, 1, 0, 7],
         [0, 0, 2, 0, 0, 0, 6, 7, 0],
     ]
+    adjacency_matrix_example10x10 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 1],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 1],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 1],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 1],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 1],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 1],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 1],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 1],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 2],
+    ]
+    adjacency_matrix_example8x8 = [
+        [0, 4, 0, 0, 0, 0, 0, 8],
+        [4, 0, 8, 0, 0, 0, 0, 11],
+        [0, 8, 0, 7, 0, 4, 0, 0],
+        [0, 0, 7, 0, 9, 14, 0, 0],
+        [0, 0, 0, 9, 0, 10, 0, 0],
+        [0, 0, 4, 14, 10, 0, 2, 0],
+        [0, 0, 0, 0, 0, 2, 0, 1],
+        [8, 11, 0, 0, 0, 0, 1, 0],
+    ]
+    adjacency_matrix_example11x11 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 5, 5],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 5, 5],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 5, 5],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 5, 5],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 5, 5],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 5, 5],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 5, 5],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 5, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 5, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 1, 5, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 2, 5, 5],
+    ]
+    adjacency_matrix_example12x12 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 1, 2, 3],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 1, 2, 3],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 1, 2, 3],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 1, 2, 3],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 1, 2, 3],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 1, 2, 3],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 1, 2, 3],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 1, 2, 3],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 3],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 6],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7],
+    ]
+    adjacency_matrix_example13x13 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 1, 2, 3, 4],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 1, 2, 3, 4],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 1, 2, 3, 4],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 1, 2, 3, 4],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 1, 2, 3, 4],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 1, 2, 3, 4],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 1, 2, 3, 4],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 1, 2, 3, 4],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 3, 4],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 5, 4],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 6, 4],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 4],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5],
+    ]
+    adjacency_matrix_example14x14 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 1, 2, 3, 4, 5],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 1, 2, 3, 4, 5],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 1, 2, 3, 4, 5],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 1, 2, 3, 4, 5],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 1, 2, 3, 4, 5],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 1, 2, 3, 4, 5],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 1, 2, 3, 4, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 3, 4, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 5, 4, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 6, 4, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 4, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5],
+    ]
+    adjacency_matrix_example15x15 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 1, 2, 3, 4, 5, 6],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 1, 2, 3, 4, 5, 6],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 1, 2, 3, 4, 5, 6],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 1, 2, 3, 4, 5, 6],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5, 6],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 1, 2, 3, 4, 5, 6],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 1, 2, 3, 4, 5, 6],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 1, 2, 3, 4, 5, 6],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 3, 4, 5, 6],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 5, 4, 5, 6],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 6, 4, 5, 6],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 4, 5, 6],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6],
+    ]
+    adjacency_matrix_example16x16 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 1, 2, 3, 4, 5, 6, 7],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 1, 2, 3, 4, 5, 6, 7],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 1, 2, 3, 4, 5, 6, 7],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 1, 2, 3, 4, 5, 6, 7],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 1, 2, 3, 4, 5, 6, 7],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 1, 2, 3, 4, 5, 6, 7],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 5, 4, 5, 6, 7],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 6, 4, 5, 6, 7],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 4, 5, 6, 7],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7],
+    ]
+    adjacency_matrix_example17x17 = [
+        [0, 4, 0, 0, 0, 0, 0, 8, 0, 1, 2, 3, 4, 5, 6, 7, 11],
+        [4, 0, 8, 0, 0, 0, 0, 11, 0, 1, 2, 3, 4, 5, 6, 7, 11],
+        [0, 8, 0, 7, 0, 4, 0, 0, 2, 1, 2, 3, 4, 5, 6, 7, 11],
+        [0, 0, 7, 0, 9, 14, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 11],
+        [0, 0, 0, 9, 0, 10, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 11],
+        [0, 0, 4, 14, 10, 0, 2, 0, 0, 1, 2, 3, 4, 5, 6, 7, 11],
+        [0, 0, 0, 0, 0, 2, 0, 1, 6, 1, 2, 3, 4, 5, 6, 7, 11],
+        [8, 11, 0, 0, 0, 0, 1, 0, 7, 1, 2, 3, 4, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 5, 4, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 6, 4, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 4, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7, 11],
+        [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7, 11],
+    ]
+    # The test sample variable defines the number of iterations or transactions 
     test_sample = 10000
+    # The matrix size variable defines the order of the adjacent matrix or number of nodes interconnected in the sample
     matrix_size = 100
+    # The max weight variable defines for each matrix element Aij the max distance or value of a transaction from node i to node j, being sqrt(matrix_size)=number_of_nodes  
     max_weight = 100
     # 1st argument --> numbers ranging from 0 to 9,
     # 2nd argument, row = 2, col = 3
@@ -141,4 +399,4 @@ if __name__ == "__main__":
         # det = np.linalg.det(array)
         # print("\nDeterminant of the adjacency matrix:")
         # print(int(det))
-        dijkstra(array, 0)
+        dijkstra(array, 0, node_names)
