@@ -63,4 +63,4 @@ All materials, data, computer code, and protocols associated with this publicati
 including the article Navarro Vera, P.J. In the Book Quantum-AI-Guarded Cyber Currency for 
 intangible tokens (Part I), 2 and the article Navarro Vera, P.J. In the Book Quantum-AI
 Guarded Cyber Currency for intangible tokens (Part II),3  are freely available and accessible 
-through a reserved DOI upon publication.
+through a reserved DOI upon publication.https://shorturl.at/SmiUt
