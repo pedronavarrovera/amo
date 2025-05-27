@@ -1,3 +1,4 @@
+# iN ORDER TO INTERCONNECT 2 PAYMENT NETWORKS THE FOLLOWING PROCESS IS DEFINED
 #block matrix composition, is specifically a type of block diagonal concatenation or matrix embedding.
 #Operation: Block Matrix Construction / Embedding
 # If you have two matrices A and B, and you want to place A in the top-left corner and B in the bottom-right corner of a new, larger matrix — with zeros elsewhere
@@ -18,7 +19,12 @@
 # The full matrix is of shape (a + b, a + b)
 # Zeros fill the rest
 # Then set the element at position (0, a) (i.e., just right of the last column of A, in the first row) to 1
-
+# example:
+#[[ 1.  2.  1.  0.  0.]
+# [ 3.  4.  0.  0.  0.]
+# [ 0.  0.  5.  6.  7.]
+# [ 0.  0.  8.  9. 10.]
+# [ 0.  0. 11. 12. 13.]]
 
 import numpy as np
 
