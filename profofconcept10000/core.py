@@ -439,7 +439,7 @@ if __name__ == "__main__":
         [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7, 11],
     ]
     # The test sample variable defines the number of iterations or transactions 
-    test_sample = 1
+    test_sample = 2
     # The matrix size variable defines the order of the adjacent matrix or number of nodes interconnected in the sample
     matrix_size = 100
     # The max weight variable defines for each matrix element Aij the max distance or value of a transaction from node i to node j, being sqrt(matrix_size)=number_of_nodes  
@@ -458,4 +458,5 @@ if __name__ == "__main__":
         # print(int(det))
         dijkstra(array, 0, node_names)
         dijkstra_to_target(array, 0, 12, node_names)  # from Pedro to Valentina
+        print(array)
 
