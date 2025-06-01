@@ -56,9 +56,40 @@ def construct_matrix_with_A_top_left(A: np.ndarray, B: np.ndarray) -> np.ndarray
 
     return D
 
+def construct_node_name_with_A_B(node_namesA: dict, node_namesB: dict) -> dict:
+    """
+    Constructs the combined node name mapping for matrix D based on node_namesA and node_namesB.
+    Keys are updated to reflect their new positions in the combined matrix.
+    """
+    node_namesD = {i: name for i, name in node_namesA.items()}
+    offset = len(node_namesA)
+    node_namesD.update({i + offset: name for i, name in node_namesB.items()})
+    return node_namesD
+
 # Example usage:
 A = np.array([[1, 2], [3, 4]])  # 2x2
 B = np.array([[5, 6, 7], [8, 9, 10], [11, 12, 13]])  # 3x3
 
 D = construct_matrix_with_A_top_left(A, B)
+
+
+# define the names below
+node_namesA = {
+    0: "Pedro",
+    1: "Juan"
+}
+node_namesB = {
+    0: "Lucas",
+    1: "Sofia",
+    2: "Lourdes"
+}
+# Construct node_namesD automatically
+node_namesD = construct_node_name_with_A_B(node_namesA, node_namesB)
+
+# Print results
+print(node_namesA)
+print(A)
+print(node_namesB)
+print(B)
+print(node_namesD)
 print(D)
