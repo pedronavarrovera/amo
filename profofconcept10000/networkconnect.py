@@ -27,6 +27,8 @@
 # [ 0.  0. 11. 12. 13.]]
 
 import numpy as np
+from core import dijkstra
+from core import dijkstra_to_target
 
 def construct_matrix_with_A_top_left(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """
@@ -92,4 +94,9 @@ print(A)
 print(node_namesB)
 print(B)
 print(node_namesD)
+print(D)
+
+# call function disjstra
+dijkstra(D, 0, node_namesD)
+dijkstra_to_target(D, 0, 4, node_namesD)  # from Pedro to
 print(D)
