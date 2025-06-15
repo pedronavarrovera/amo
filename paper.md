@@ -21,7 +21,7 @@ bibliography: paper.bib
 
 # Summary
 
-The global economy is evolving with technologies such as artificial intelligence, quantum computing, distributed ledgers, and modern banking systems. This work introduces **@mo**, a new fungible digital currency designed for secure transactions of intangible assets (such as goodwill, reputation, or digital tokens) in fields like healthcare and humanitarian aid. Using a **Proof of Concept (PoC)**, the paper demonstrates enhanced transaction security and stability by combining **quantum encryption**, **AI-driven cybersecurity**, **blockchain protocols**, and **Dijkstra's Algorithm** to optimize transaction paths and reduce currency volatility.
+The global economy is evolving with technologies such as artificial intelligence, quantum computing, distributed ledgers, and modern banking systems. This work introduces **amo**, a new fungible digital currency designed for secure transactions of intangible assets (such as goodwill, reputation, or digital tokens) in fields like healthcare and humanitarian aid. Using a **Proof of Concept (PoC)**, the paper demonstrates enhanced transaction security and stability by combining **quantum encryption**, **AI-driven cybersecurity**, **blockchain protocols**, and **Dijkstra's Algorithm** to optimize transaction paths and reduce currency volatility.
 
 # Statement of Need
 
