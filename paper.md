@@ -25,7 +25,7 @@ The global economy is evolving with technologies such as artificial intelligence
 
 # Statement of Need
 
-Traditional currencies struggle to represent and manage intangible assets. The @mo currency addresses this gap by providing a secure, efficient, and ethical method for exchanging digital intangible assets, ensuring trustworthiness and stability in volatile environments where traditional money systems fall short.
+Traditional currencies struggle to represent and manage intangible assets. The amo currency addresses this gap by providing a secure, efficient, and ethical method for exchanging digital intangible assets, ensuring trustworthiness and stability in volatile environments where traditional money systems fall short.
 
 # Software Description
 
