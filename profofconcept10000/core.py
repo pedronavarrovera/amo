@@ -28,13 +28,17 @@
 #           Currency unit (@mo)
 #           Shortest path (as sequence of nodes)
 
-
+# Import required libraries
 import sys
 import numpy as np
 
-NO_PARENT = -1
-MONEDA = "@mo"
+# Constants
+NO_PARENT = -1      # Used in parent array to denote root
+MONEDA = "@mo"       # Custom currency symbol used for transactions
+
+# Mapping node indices to user names
 # define the names below
+# 0 to 99 mapped to person names
 node_names = {
     0: "Pedro",
     1: "Juan",
@@ -137,19 +141,23 @@ node_names = {
     98: "Ramiro",
     99: "Lourdes"
 }
+# -------------------------------
+# Dijkstra Algorithm to a Target
+# -------------------------------
+#Calculates shortest path from start_vertex to destination_vertex using Dijkstra's algorithm
 def dijkstra_to_target(adjacency_matrix, start_vertex, destination_vertex, node_names):
     n_vertices = len(adjacency_matrix[0])
-    shortest_distances = [sys.maxsize] * n_vertices
-    added = [False] * n_vertices
-    parents = [-1] * n_vertices
+    shortest_distances = [sys.maxsize] * n_vertices         # distance from start to each node
+    added = [False] * n_vertices                            # track processed nodes
+    parents = [-1] * n_vertices                             # track path (via parents)
 
     shortest_distances[start_vertex] = 0
     parents[start_vertex] = NO_PARENT
-
+    # Main Dijkstra loop
     for _ in range(n_vertices):
         nearest_vertex = -1
         shortest_distance = sys.maxsize
-
+        # Find unvisited vertex with smallest distance
         for vertex_index in range(n_vertices):
             if not added[vertex_index] and shortest_distances[vertex_index] < shortest_distance:
                 nearest_vertex = vertex_index
@@ -162,7 +170,7 @@ def dijkstra_to_target(adjacency_matrix, start_vertex, destination_vertex, node_
 
         if nearest_vertex == destination_vertex:
             break  # destination reached
-
+        # Update neighboring vertex distances
         for vertex_index in range(n_vertices):
             edge_distance = adjacency_matrix[nearest_vertex][vertex_index]
             if edge_distance > 0 and shortest_distance + edge_distance < shortest_distances[vertex_index]:
@@ -176,7 +184,10 @@ def dijkstra_to_target(adjacency_matrix, start_vertex, destination_vertex, node_
     print_path(destination_vertex, parents, node_names)
     print()
 
-
+# ----------------------------
+# Dijkstra Algorithm (Generic)
+# ----------------------------
+#Computes shortest paths from a source node to all others.
 def dijkstra(adjacency_matrix, start_vertex, node_names):
     n_vertices = len(adjacency_matrix[0])
 
@@ -242,7 +253,7 @@ def dijkstra(adjacency_matrix, start_vertex, node_names):
             ):
                 parents[vertex_index] = nearest_vertex
                 shortest_distances[vertex_index] = shortest_distance + edge_distance
-
+    # Display result for all nodes
     print_solution(start_vertex, shortest_distances, parents, node_names)
 
 
@@ -295,7 +306,11 @@ def print_path(current_vertex, parents, node_names):
 
 
 # Driver code
+# -----------------------------
+# Main execution block
+# -----------------------------
 if __name__ == "__main__":
+    # Several predefined adjacency matrices for testing
     adjacency_matrix_example9x9 = [
         [0, 4, 0, 0, 0, 0, 0, 8, 0],
         [4, 0, 8, 0, 0, 0, 0, 11, 0],
@@ -438,6 +453,7 @@ if __name__ == "__main__":
         [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7, 11],
         [0, 0, 2, 0, 0, 0, 6, 7, 0, 1, 2, 7, 5, 5, 6, 7, 11],
     ]
+    # Define test parameters
     # The test sample variable defines the number of iterations or transactions 
     test_sample = 2
     # The matrix size variable defines the order of the adjacent matrix or number of nodes interconnected in the sample
@@ -447,6 +463,7 @@ if __name__ == "__main__":
     # 1st argument --> numbers ranging from 0 to 9,
     # 2nd argument, row = 2, col = 3
     for iteration in range(1, test_sample):
+        # Generate a random weighted adjacency matrix
         array = np.random.randint(max_weight, size=(matrix_size, matrix_size))
         # print("test_sample : "," ","\n",test_sample)
         # print("max size : "," ","\n",matrix_size)
@@ -456,7 +473,10 @@ if __name__ == "__main__":
         # det = np.linalg.det(array)
         # print("\nDeterminant of the adjacency matrix:")
         # print(int(det))
+        
+        # Run full Dijkstra from node 0 (Pedro) to all
         dijkstra(array, 0, node_names)
+        # Run Dijkstra specifically to node 12 (Valentina)
         dijkstra_to_target(array, 0, 12, node_names)  # from Pedro to Valentina
         print(array)
 
