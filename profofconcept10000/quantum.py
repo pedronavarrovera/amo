@@ -4,6 +4,12 @@
 # Post-Quantum Key Exchange: MLKEM_512 (Kyber)
 # Symmetric Encryption: AES-256 (CBC) via PyCryptodome
 # Quantum-safe end-to-end encryption
+# ML-KEM-512, also known as Kyber512, is a post-quantum cryptographic algorithm designed for key encapsulation 
+# — the secure exchange of encryption keys — even in the presence of quantum computers
+# ML-KEM = Module-Lattice–based Key Encapsulation Mechanism
+# Selected by NIST in 2022 as the primary standard for post-quantum public key encryption and key exchange.
+# Lattice-based cryptography is a type of cryptographic system that builds its security on the hardness of certain mathematical problems involving lattices
+#  — regular grid-like arrangements of points in multi-dimensional space
 
 from quantcrypt.kem import MLKEM_512
 from Cryptodome.Cipher import AES
