@@ -1,19 +1,19 @@
 # iN ORDER TO INTERCONNECT 2 PAYMENT NETWORKS THE FOLLOWING PROCESS IS DEFINED
-#block matrix composition, is specifically a type of block diagonal concatenation or matrix embedding.
-#Operation: Block Matrix Construction / Embedding
+# A block matrix composition, is specifically a type of block diagonal concatenation or matrix embedding.
+# Operation: Block Matrix Construction / Embedding
 # If you have two matrices A and B, and you want to place A in the top-left corner and B in the bottom-right corner of a new, larger matrix — with zeros elsewhere
 # — you're constructing a block diagonal matrix (with one block in each corner).
-#Example
-#Let:
-#A be a matrix of shape (m, n)
-#B be a matrix of shape (p, q)
-#Then the resulting matrix C will have shape (m + p, n + q), and look like this:
+# Example
+# Let:
+# A be a matrix of shape (m, n)
+# B be a matrix of shape (p, q)
+# Then the resulting matrix C will have shape (m + p, n + q), and look like this:
 # C=[A 0]
 #   [0 B]
 # Where 0 represents zero matrices of appropriate dimensions to fill the rest of the space.
 # In addition, in order to connect the 2 networks for instance the firts items of each network need to be connected (e.g. this is managed by the merge authority)
 
-# You want to build a square matrix D such that:
+# The goal is to build a square matrix D such that:
 # Matrix A (shape (a, a)) is placed in the top-left
 # Matrix B (shape (b, b)) is placed in the bottom-right
 # The full matrix is of shape (a + b, a + b)
