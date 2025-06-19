@@ -32,14 +32,17 @@ Traditional currencies struggle to represent and manage intangible assets. The a
 ## Key Features (Version 1.0.0)
 
 - Use of Dijkstra's Algorithm to optimize transfer routes
+- Use of new Block Matrix Construction / Embedding in order to connect 2 payment networks
+- Use of Post-Quantum Encryption Flow in order to encrypt transfer routes
 
 *Note: Other features like secure onboarding, digital wallet management, inheritance plans, encrypted data messaging, secure storage, revocation system, security audits, and quantum-proofing are planned for future versions.*
 
 ## Technologies Used (Version 1.0.0)
 
 - Python
+- Post quantum Module-Lattice–based Key Encapsulation Mechanism
 
-*Note: Technologies like Power BI, blockchain-based storage, quantum encryption, and AI algorithms are planned for future versions.*
+*Note: Technologies like Power BI, blockchain-based storage, and AI algorithms are planned for future versions.*
 
 ## Architecture
 
