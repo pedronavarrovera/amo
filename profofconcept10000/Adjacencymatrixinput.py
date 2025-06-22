@@ -1,3 +1,7 @@
+# Prompt you for node names and an adjacency matrix
+# Store them in node_names and adjacency_matrix
+# either enter the matrix and node names manually, or read them from a base64-encoded code
+# for example this code: eyJub2RlcyI6IHsiMCI6ICJBbGljZSIsICIxIjogIkJvYiIsICIyIjogIkNhcm9sIn0sICJtYXRyaXgiOiBbWzAsIDEsIDBdLCBbMSwgMCwgMV0sIFswLCAxLCAwXV19 
 import base64
 import json
 
@@ -10,7 +14,7 @@ def read_node_names_dict(n):
 
 def read_adjacency_matrix(n, node_names):
     """
-    Read an n x n adjacency matrix from the console.
+    Read an n x n adjacency matrix from the console with validation.
     """
     print(f"Enter the adjacency matrix ({n}x{n}) row by row (space-separated):")
     matrix = []
@@ -19,6 +23,14 @@ def read_adjacency_matrix(n, node_names):
         if len(row) != n:
             raise ValueError(f"Row {i} must have {n} elements.")
         matrix.append(row)
+
+    # Validate symmetry
+    is_symmetric = all(matrix[i][j] == matrix[j][i] for i in range(n) for j in range(n))
+    if not is_symmetric:
+        print("⚠️ Warning: The matrix is NOT symmetric.")
+    else:
+        print("✅ Matrix is symmetric.")
+
     return matrix
 
 def encode_adjacency_matrix(matrix, node_names):
@@ -42,17 +54,45 @@ def decode_adjacency_code(code):
     node_names = {int(k): v for k, v in data['nodes'].items()}
     return matrix, node_names
 
+def validate_decoded_matrix(matrix):
+    """
+    Validate if the decoded matrix is square and symmetric.
+    """
+    n = len(matrix)
+    is_square = all(len(row) == n for row in matrix)
+    is_symmetric = all(matrix[i][j] == matrix[j][i] for i in range(n) for j in range(n))
+
+    if not is_square:
+        print("❌ Error: Decoded matrix is not square.")
+    elif not is_symmetric:
+        print("⚠️ Warning: Decoded matrix is NOT symmetric.")
+    else:
+        print("✅ Decoded matrix is valid and symmetric.")
+
 # === MAIN EXECUTION ===
 if __name__ == "__main__":
-    print("📥 Capture adjacency matrix and node names from console")
+    print("📥 Graph Input Options:")
+    print("1. Enter matrix and nodes manually")
+    print("2. Paste encoded base64 code")
+    choice = input("Select an option (1 or 2): ").strip()
 
-    n = int(input("Enter number of nodes: "))
-    node_names = read_node_names_dict(n)
-    adjacency_matrix = read_adjacency_matrix(n, node_names)
+    if choice == '1':
+        n = int(input("Enter number of nodes: "))
+        node_names = read_node_names_dict(n)
+        adjacency_matrix = read_adjacency_matrix(n, node_names)
+        encoded_code = encode_adjacency_matrix(adjacency_matrix, node_names)
 
-    # Encode
-    encoded_code = encode_adjacency_matrix(adjacency_matrix, node_names)
+    elif choice == '2':
+        code = input("Paste the base64-encoded graph code: ").strip()
+        adjacency_matrix, node_names = decode_adjacency_code(code)
+        encoded_code = code
+        print("\n✅ Code successfully decoded.")
+        validate_decoded_matrix(adjacency_matrix)
 
+    else:
+        raise ValueError("Invalid option selected.")
+
+    # Display results
     print("\n✅ Variables stored as Python code:")
     print("node_names =")
     print(node_names)
@@ -66,7 +106,7 @@ if __name__ == "__main__":
 
     # Decode to verify
     decoded_matrix, decoded_names = decode_adjacency_code(encoded_code)
-
+    validate_decoded_matrix(decoded_matrix)
     print("\n🔁 Decoded Verification:")
     print("Decoded node names:", decoded_names)
     print("Decoded matrix:")
