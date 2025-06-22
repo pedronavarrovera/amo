@@ -36,12 +36,12 @@ import numpy as np
 NO_PARENT = -1      # Used in parent array to denote root
 MONEDA = "@mo"       # Custom currency symbol used for transactions
 
-# Mapping node indices to user names
+# Mapping node indices to user names e.g. first name and login name in the payment application cyclos
 # define the names below
 # 0 to 99 mapped to person names
 node_names = {
-    0: "Pedro",
-    1: "Juan",
+    0: "Pedro usercybereu",
+    1: "Pilar pramos1971",
     2: "Lucas",
     3: "Sofia",
     4: "Emma",
@@ -144,7 +144,8 @@ node_names = {
 # -------------------------------
 # Dijkstra Algorithm to a Target
 # -------------------------------
-#Calculates shortest path from start_vertex to destination_vertex using Dijkstra's algorithm
+# Calculates shortest path from start_vertex to destination_vertex using Dijkstra's algorithm. 
+# As parameter it takes the adjacency_matrix and node_names as well as the start_vertex and destination_vertex
 def dijkstra_to_target(adjacency_matrix, start_vertex, destination_vertex, node_names):
     n_vertices = len(adjacency_matrix[0])
     shortest_distances = [sys.maxsize] * n_vertices         # distance from start to each node
@@ -187,7 +188,8 @@ def dijkstra_to_target(adjacency_matrix, start_vertex, destination_vertex, node_
 # ----------------------------
 # Dijkstra Algorithm (Generic)
 # ----------------------------
-#Computes shortest paths from a source node to all others.
+# Computes shortest paths from a source node to all others. 
+# As parameter it takes the adjacency_matrix and node_names as well as the start_vertex and destination_vertex
 def dijkstra(adjacency_matrix, start_vertex, node_names):
     n_vertices = len(adjacency_matrix[0])
 
