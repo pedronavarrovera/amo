@@ -74,8 +74,14 @@ for i in range(n):
 try:
     path = nx.dijkstra_path(G, source, target, weight='weight')
     path_edges = list(zip(path, path[1:]))
-    total_cost = sum(G[u][v]['weight'] for u, v in path_edges)
+
     print(f"\nRuta más corta encontrada: {' → '.join(path)}")
+    print("Saltos y costes:")
+    total_cost = 0
+    for u, v in path_edges:
+        w = G[u][v]['weight']
+        total_cost += w
+        print(f"  {u} → {v}: coste {w}")
     print(f"Coste total de la ruta: {total_cost}")
 except nx.NetworkXNoPath:
     path = []
@@ -93,4 +99,5 @@ nx.draw(G, pos, with_labels=True, node_color="lightblue", node_size=1000,
 nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
 plt.title(f"Ruta más corta de {source} a {target}" + (" (en rojo)" if path else " - NO CONECTADOS"))
 plt.show()
+
 
