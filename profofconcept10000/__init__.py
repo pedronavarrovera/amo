@@ -1,1 +1,1 @@
-from .core import dijkstra
+from ..test_old import dijkstra

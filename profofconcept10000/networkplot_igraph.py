@@ -1,4 +1,15 @@
-
+# The script builds a graph of people interconnected by weights (e.g., relationships, distances, costs, etc.). 
+# It allows the user to either:
+# manually define this connection matrix,
+# or generate it randomly.
+# It then:
+# computes the shortest path between two selected people (nodes),
+# shows the total cost of that path,
+# and visualizes the network, highlighting the route.
+## To calculate the shortest path using Dijkstra's algorithm in Python, here are some reliable libraries: 
+# Option 1: NetworkX (most popular and beginner-friendly)
+# Option 2: scipy.sparse.csgraph (efficient for large sparse graphs)
+# Option 3 selected: igraph (very fast, suitable for large networks): Performance-oriented, good for large-scale graphs. Handles millions of nodes and tens of millions of edges efficiently.
 import random
 import matplotlib.pyplot as plt
 import numpy as np
