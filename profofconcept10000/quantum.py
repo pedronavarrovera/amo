@@ -4,6 +4,8 @@
 # Post-Quantum Key Exchange: MLKEM_512 (Kyber)
 # Symmetric Encryption: AES-256 (CBC) via PyCryptodome
 # Quantum-safe end-to-end encryption
+# Post-quantum safe: Even if an attacker intercepts the ciphertext, they cannot derive the shared secret
+# unless they can break Kyber (which resists quantum attacks)
 # ML-KEM-512, also known as Kyber512, is a post-quantum cryptographic algorithm designed for key encapsulation 
 # — the secure exchange of encryption keys — even in the presence of quantum computers
 # ML-KEM = Module-Lattice–based Key Encapsulation Mechanism
@@ -36,6 +38,15 @@ def decrypt_message(enc: str, key: bytes) -> str:
     iv, ct = data[:16], data[16:]           # Extracts the IV and the ciphertext
     cipher = AES.new(key[:32], AES.MODE_CBC, iv)        # Uses AES with the same key and IV to decrypt the message
     return unpad(cipher.decrypt(ct), AES.block_size).decode()       # Removes the padding and converts the plaintext back to a string
+
+# ---- Quantum-safe message transmission during traversal ----
+def send_secure_message(sender: str, receiver: str, message: str, key: bytes) -> str:
+    print(f"\n🔐 Sending from {sender} to {receiver}:")
+    encrypted_msg = encrypt_message(message, key)
+    print(f"Encrypted: {encrypted_msg}")
+    decrypted_msg = decrypt_message(encrypted_msg, key)
+    print(f"Decrypted: {decrypted_msg}")
+    return encrypted_msg
 
 # 3. Usage Example
 plaintext = "This is a quantum-safe secret message."

@@ -31,8 +31,8 @@
 # [ 0.  0. 11. 12. 13.]]
 
 import numpy as np
-from test_old import dijkstra
-from test_old import dijkstra_to_target
+from core_old import dijkstra
+from core_old import dijkstra_to_target
 
 def construct_matrix_with_A_top_left(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """

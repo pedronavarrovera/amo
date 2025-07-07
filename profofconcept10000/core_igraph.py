@@ -19,7 +19,11 @@
 #       Outputs include: transaction source and destination, cost, currency symbol (@mo), and route
 #   Data Generation:
 #       Generates large datasets (e.g., 10,000 random networks of 100 users each) to simulate transactions
-#       The output is suitable for analysis and visualization (e.g., with Power BI).    
+#       The output is suitable for analysis and visualization (e.g., with Power BI).
+#   Data Encryption:
+#       Encrypts a message from sender to receiver using ML-KEM + AES-256
+#       Integrate it in the shortest path loop
+#       Log encrypted and decrypted messages per hop
 #   Outputs:
 #       Each transaction simulation prints:
 #           Transaction ID
@@ -27,6 +31,7 @@
 #           Distance (transaction cost)
 #           Currency unit (@mo)
 #           Shortest path (as sequence of nodes)
+#       For a desired transaction Log encrypted and decrypted messages per hop and Integrate it in the shortest path loop
 #
 # To calculate the shortest path using Dijkstra's algorithm in Python, here are some reliable libraries: 
 # Option 1: NetworkX (most popular and beginner-friendly)
@@ -42,7 +47,12 @@
 # Import required libraries
 import numpy as np
 from igraph import Graph
-
+from quantum import send_secure_message
+from quantcrypt.kem import MLKEM_512
+from Cryptodome.Cipher import AES
+from Cryptodome.Util.Padding import pad, unpad
+from Cryptodome.Random import get_random_bytes
+import base64
 # Constants
 
 MONEDA = "@mo" # is the symbol used to represent a custom currency
@@ -196,8 +206,16 @@ def dijkstra_igraph_to_target(adjacency_matrix, start_vertex, destination_vertex
     print(f"\nShortest path from {node_names[start_vertex]} to {node_names[destination_vertex]}")
     print(f"Distance: {dist} {MONEDA}")
     print("Path: ", end="")
-    for v in path:
-        print(f"{v} {node_names.get(v, str(v))}", end=" ")
+    for i in range(len(path)):
+        node_id = path[i]
+        node_name = node_names.get(node_id, str(node_id))
+        print(f"{node_id} {node_name}", end=" ")
+
+        if i < len(path) - 1:
+            sender = node_name
+            receiver = node_names.get(path[i + 1], str(path[i + 1]))
+            message = f"Secure message from {sender} to {receiver} during path traversal."
+            send_secure_message(sender, receiver, message, shared_secret_sender)
     print()
 
 # Generates a random 100x100 adjacency matrix of weights in range [0, max_weight)
@@ -349,6 +367,13 @@ if __name__ == "__main__":
     test_sample = 1
     matrix_size = 100
     max_weight = 100
+    # 1. Key Encapsulation with ML-KEM-512 (Kyber512)
+    kem = MLKEM_512()
+    public_key, secret_key = kem.keygen()       # generates a public/private key pair
+    ciphertext, shared_secret_sender = kem.encaps(public_key)       # uses the public key to generate a ciphertext and a shared secret (from the sender’s side)
+    shared_secret_receiver = kem.decaps(secret_key, ciphertext)     # uses the private key and the ciphertext to reconstruct the same shared secret (on the receiver’s side).
+
+    assert shared_secret_sender == shared_secret_receiver           # ensures that both sides now hold identical shared secrets, without ever transmitting the key directly — crucial for quantum-safe communication
 
     for iteration in range(test_sample):
         matrix = np.random.randint(0, max_weight, size=(matrix_size, matrix_size))
