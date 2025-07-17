@@ -8,4 +8,4 @@ Quantum-AI-Guarded Cyber Currency for  intangible tokens
 # Guarded Cyber Currency for intangible tokens (Part II), are freely available and accessible 
 # through a reserved DOI upon publication. The registered DOI for this study is: 
 # 10.5281/zenodo.15017650
-# The link can be found in the GitLab repository 
+# The link can be found in the GitLab repository https://github.com/pedronavarrovera/amo
