@@ -36,7 +36,7 @@
 # so you get a full quantum-safe encryption flow
 
 import numpy as np
-from core_old import dijkstra, dijkstra_to_target
+from test.core_old import dijkstra, dijkstra_to_target
 from quantum import encrypt_message, decrypt_message, shared_secret_sender, shared_secret_receiver
 
 def construct_matrix_with_A_top_left(A: np.ndarray, B: np.ndarray) -> np.ndarray:
