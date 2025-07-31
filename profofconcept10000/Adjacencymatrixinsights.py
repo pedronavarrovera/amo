@@ -23,6 +23,9 @@
 # Alice pays Carol 10 (via net settlement)
 # Alice pays Bob 30
 # Final matrix reflects direct, minimal transfers, avoiding circular debt and intermediaries
+# Finally it finds the debt cycle shortest back given A and B as well as the matrix
+# find a debt cycle that:Starts at a given node A, Goes directly to node B, 
+# Then follows the shortest possible path from B back to A (forming a cycle).
 
 
 import base64
@@ -30,101 +33,6 @@ import json
 import networkx as nx
 from copy import deepcopy
 
-#
-def settle_debts(matrix, node_names, verbose=True):
-    """
-    Analyzes, suggests, and applies debt settlements on a matrix of debts between people.
-    
-    Args:
-        matrix (List[List[int]]): Original n x n debt matrix (matrix[i][j] = i owes j).
-        node_names (Dict[int, str]): Mapping of node index to names.
-        verbose (bool): If True, print full analysis and actions.
-
-    Returns:
-        adjusted_matrix (List[List[int]]): New matrix after applying settlements.
-    """
-    n = len(matrix)
-    name_to_index = {name: idx for idx, name in node_names.items()}
-    adjusted_matrix = deepcopy(matrix)
-
-    # === 1. Calculate totals and net balances ===
-    total_owed_by = {}
-    total_owed_to = {}
-    net_balance = {}
-
-    for i in range(n):
-        person = node_names[i]
-        owed_by = sum(matrix[i])
-        owed_to = sum(matrix[j][i] for j in range(n))
-        total_owed_by[person] = owed_by
-        total_owed_to[person] = owed_to
-        net_balance[person] = owed_to - owed_by
-
-    if verbose:
-        print("\n📊 Debt Analysis")
-        print("{:<12} {:>10} {:>12} {:>12}".format("Person", "Owes", "Is Owed", "Net Balance"))
-        print("-" * 48)
-        for person in node_names.values():
-            print("{:<12} {:>10} {:>12} {:>12}".format(
-                person,
-                total_owed_by[person],
-                total_owed_to[person],
-                net_balance[person]
-            ))
-
-    # === 2. Detect cycles ===
-    if verbose:
-        print("\n🔁 Debt Cycles")
-        print("-" * 40)
-    G = nx.DiGraph()
-    for i in range(n):
-        for j in range(n):
-            if matrix[i][j] > 0:
-                G.add_edge(node_names[i], node_names[j], weight=matrix[i][j])
-
-    cycles = list(nx.simple_cycles(G))
-    if not cycles and verbose:
-        print("✅ No circular debt found.")
-    elif verbose:
-        for i, cycle in enumerate(cycles, 1):
-            min_transfer = min(G[cycle[k]][cycle[(k+1)%len(cycle)]]['weight'] for k in range(len(cycle)))
-            print(f"🔄 Cycle {i}: {' → '.join(cycle)} → {cycle[0]}")
-            print(f"   ⚖️ Can cancel up to {min_transfer}")
-
-    # === 3. Suggest & apply settlements ===
-    if verbose:
-        print("\n💡 Settlement Suggestions")
-        print("-" * 40)
-    creditors = sorted([(p, b) for p, b in net_balance.items() if b > 0], key=lambda x: -x[1])
-    debtors = sorted([(p, b) for p, b in net_balance.items() if b < 0], key=lambda x: x[1])
-
-    i = j = 0
-    while i < len(debtors) and j < len(creditors):
-        debtor, debt_amt = debtors[i]
-        creditor, cred_amt = creditors[j]
-        payment = min(-debt_amt, cred_amt)
-
-        if verbose:
-            print(f"💸 {debtor} should pay {creditor} → {payment}")
-
-        d_idx = name_to_index[debtor]
-        c_idx = name_to_index[creditor]
-        adjusted_matrix[d_idx][c_idx] += payment
-
-        debtors[i] = (debtor, debt_amt + payment)
-        creditors[j] = (creditor, cred_amt - payment)
-
-        if debtors[i][1] == 0:
-            i += 1
-        if creditors[j][1] == 0:
-            j += 1
-
-    if verbose:
-        print("\n🧾 Final Adjusted Matrix After Settlements:")
-        for i, row in enumerate(adjusted_matrix):
-            print(f"{node_names[i]} →", ' '.join(map(str, row)))
-
-    return adjusted_matrix
 
 #
 def analyze_debt_matrix(matrix, node_names):
@@ -287,6 +195,84 @@ def validate_decoded_matrix(matrix):
     else:
         print("✅ Decoded matrix is valid and symmetric.")
 
+def find_debt_cycle_shortest_back(matrix, node_names, start_node, second_node):
+    """
+    Find a debt cycle that starts at `start_node`, goes to `second_node`, and returns
+    to `start_node` through the shortest weighted path from B back to A.
+    """
+    G = nx.DiGraph()
+    n = len(matrix)
+
+    # Build the graph
+    for i in range(n):
+        for j in range(n):
+            if matrix[i][j] > 0:
+                G.add_edge(node_names[i], node_names[j], weight=matrix[i][j])
+
+    if not G.has_edge(start_node, second_node):
+        print(f"❌ No direct debt from {start_node} to {second_node}.")
+        return None
+
+    try:
+        # Find shortest path from B to A
+        path_back = nx.shortest_path(G, source=second_node, target=start_node, weight='weight')
+    except nx.NetworkXNoPath:
+        print(f"❌ No path from {second_node} back to {start_node}.")
+        return None
+
+    # Form the full cycle: A → B → shortest path from B to A
+    cycle = [start_node, second_node] + path_back[1:]
+
+    print(f"\n🔁 Debt cycle using shortest path:")
+    print(" → ".join(cycle))
+
+    # Only evaluate consecutive edges in the cycle (no wraparound)
+    try:
+        min_transfer = min(
+            G[cycle[i]][cycle[i + 1]]['weight']
+            for i in range(len(cycle) - 1)
+        )
+    except KeyError as e:
+        print(f"❌ Invalid edge in constructed cycle: {e}")
+        return None
+
+    print(f"   ⚖️ Potential to cancel up to {min_transfer}")
+
+    return cycle
+
+def suggest_settlements_from_cycle(matrix, node_names, cycle):
+    """
+    Suggest direct settlements to cancel a cycle by its minimum transfer amount.
+
+    Args:
+        matrix (List[List[int]]): The original adjacency matrix.
+        node_names (Dict[int, str]): Mapping from indices to person names.
+        cycle (List[str]): The detected cycle, e.g., ['Pedro', 'Pilar', 'David', 'Pedro']
+    """
+    if not cycle or len(cycle) < 2:
+        print("⚠️ Invalid cycle provided.")
+        return
+
+    # Create lookup from name to index
+    name_to_index = {v: k for k, v in node_names.items()}
+
+    # Compute the minimum transferable amount in the cycle
+    min_transfer = float('inf')
+    for i in range(len(cycle) - 1):
+        u = name_to_index[cycle[i]]
+        v = name_to_index[cycle[i + 1]]
+        min_transfer = min(min_transfer, matrix[u][v])
+    
+    print(f"\n💡 Suggested settlements to cancel this cycle (amount: {min_transfer}):")
+    for i in range(len(cycle) - 1):
+        payer = cycle[i]
+        receiver = cycle[i + 1]
+        print(f"💸 {payer} should pay {receiver} → {min_transfer}")
+
+    print(f"\n✅ This will remove {min_transfer} from each link in the cycle.")
+
+
+
 # === MAIN EXECUTION ===
 if __name__ == "__main__":
     print("📥 Graph Input Options:")
@@ -334,13 +320,17 @@ if __name__ == "__main__":
     # Provide insights
     analyze_debt_matrix(adjacency_matrix, node_names)
 
-    # Apply those settlements and Return the final adjusted matrix
-    matrix = adjacency_matrix
-    new_matrix = settle_debts(matrix, node_names)
-    print("\nadjacency_matrix = [")
-    for row in new_matrix:
-        print("    " + str(row) + ",")
-    print("]")
-    #
-    # Provide insights after settlement
-    analyze_debt_matrix(new_matrix, node_names)
+    # === OPTIONAL: Find specific A → B → shortest path back to A cycle ===
+    user_choice = input("\n🔎 Do you want to find a cycle A → B → shortest path back to A? (y/n): ").strip().lower()
+    if user_choice == 'y':
+        print("Available node names:", list(node_names.values()))
+        start_node = input("Enter the starting node A: ").strip()
+        second_node = input("Enter the second node B (must be directly owed by A): ").strip()
+        if start_node not in node_names.values() or second_node not in node_names.values():
+            print("❌ One or both names not found.")
+        else:
+            find_debt_cycle_shortest_back(adjacency_matrix, node_names, start_node, second_node)
+
+    cycle = find_debt_cycle_shortest_back(adjacency_matrix, node_names, "Pedro", "Pilar")
+    if cycle:
+    suggest_settlements_from_cycle(adjacency_matrix, node_names, cycle)
