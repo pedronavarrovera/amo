@@ -26,6 +26,13 @@
 # Finally it finds the debt cycle shortest back given A and B as well as the matrix
 # find a debt cycle that:Starts at a given node A, Goes directly to node B, 
 # Then follows the shortest possible path from B back to A (forming a cycle).
+# Suggest direct settlements
+# That is: resolve the cycle with net balance reduction, avoiding redundant intermediate payments
+# From the detected cycle:
+# Find the minimum transferable amount M across the cycle,
+# Suggest direct payments from each person to the next to settle it
+# Reduce all edges in the cycle by M, effectively simplifying the loop
+# Applies the settlements by subtracting the minimum transferable amount from each debt in the cycle, updating the matrix directly
 
 
 import base64
@@ -271,6 +278,41 @@ def suggest_settlements_from_cycle(matrix, node_names, cycle):
 
     print(f"\n✅ This will remove {min_transfer} from each link in the cycle.")
 
+def apply_cycle_settlement(matrix, node_names, cycle):
+    """
+    Apply settlements to cancel a cycle by subtracting the minimum transferable amount
+    from each debt in the cycle. Modifies the matrix in place.
+
+    Args:
+        matrix (List[List[int]]): The original debt matrix to be modified.
+        node_names (Dict[int, str]): Mapping from index to names.
+        cycle (List[str]): A list of node names forming a cycle (e.g. ['A', 'B', 'C', 'A'])
+    """
+    if not cycle or len(cycle) < 2:
+        print("⚠️ Invalid cycle.")
+        return
+
+    name_to_index = {v: k for k, v in node_names.items()}
+
+    # Find minimum debt along the cycle edges
+    min_transfer = float('inf')
+    for i in range(len(cycle) - 1):
+        u = name_to_index[cycle[i]]
+        v = name_to_index[cycle[i + 1]]
+        min_transfer = min(min_transfer, matrix[u][v])
+
+    # Apply settlement: subtract min_transfer from each edge in the cycle
+    for i in range(len(cycle) - 1):
+        u = name_to_index[cycle[i]]
+        v = name_to_index[cycle[i + 1]]
+        matrix[u][v] -= min_transfer
+
+    print(f"\n🔧 Applied settlement: {min_transfer} removed from each link in the cycle.")
+    print("✅ Updated matrix reflects reduced debts in this cycle.")
+    print("\nUpdated matrix= [")
+    for row in matrix:
+        print("    " + str(row) + ",")
+    print("]")
 
 
 # === MAIN EXECUTION ===
@@ -331,6 +373,7 @@ if __name__ == "__main__":
         else:
             find_debt_cycle_shortest_back(adjacency_matrix, node_names, start_node, second_node)
 
-    cycle = find_debt_cycle_shortest_back(adjacency_matrix, node_names, "Pedro", "Pilar")
+    cycle = find_debt_cycle_shortest_back(adjacency_matrix, node_names, start_node, second_node)
     if cycle:
-    suggest_settlements_from_cycle(adjacency_matrix, node_names, cycle)
+        suggest_settlements_from_cycle(adjacency_matrix, node_names, cycle)
+        apply_cycle_settlement(adjacency_matrix, node_names, cycle)
