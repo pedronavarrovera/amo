@@ -73,7 +73,7 @@ def validate_decoded_matrix(matrix):
 if __name__ == "__main__":
     print("📥 Graph Input Options:")
     print("1. Enter matrix and nodes manually")
-    print("2. Paste encoded base64 code")
+    print("2. Paste encoded base64 code e.g. eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiRGF2aWQifSwgIm1hdHJpeCI6IFtbMCwgMTAsIDBdLCBbMTAsIDAsIDEwXSwgWzAsIDEwLCAwXV19")
     choice = input("Select an option (1 or 2): ").strip()
 
     if choice == '1':
