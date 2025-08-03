@@ -13,27 +13,96 @@
 # and suggest debt settlements to reduce total transactions
 # Cycle Detection (e.g., Alice → Bob → Carol → Alice) for instance 
 # These indicate circular debt that can be simplified or canceled
-# Debt Settlement Suggestions e.g. Suggest direct settlements between people to minimize intermediate transfers — like resolving net balances
-# For instance: 
-# Before settlement:
-# Alice owes Bob 40
-# Bob owes Carol 30
-# Carol owes Alice 10
-# After settlement:
-# Alice pays Carol 10 (via net settlement)
-# Alice pays Bob 30
-# Final matrix reflects direct, minimal transfers, avoiding circular debt and intermediaries
-# Finally it finds the debt cycle shortest back given A and B as well as the matrix
+#
+#
+# Suggest indirect debts settlements: resolve the cycle with net balance reduction, avoiding redundant intermediate payments
+# It finds the debt cycle shortest back given A and B as well as the matrix
 # find a debt cycle that:Starts at a given node A, Goes directly to node B, 
 # Then follows the shortest possible path from B back to A (forming a cycle).
-# Suggest direct settlements
-# That is: resolve the cycle with net balance reduction, avoiding redundant intermediate payments
 # From the detected cycle:
 # Find the minimum transferable amount M across the cycle,
 # Suggest direct payments from each person to the next to settle it
 # Reduce all edges in the cycle by M, effectively simplifying the loop
 # Applies the settlements by subtracting the minimum transferable amount from each debt in the cycle, updating the matrix directly
-
+# For instance:
+# Pedro owes Pilar 10
+# Pilar owes Andrea 20
+# Andres Owes David 30
+# David owes Pedro 40
+# Decoded node names: {0: 'Pedro', 1: 'Pilar', 2: 'Andrea', 3: 'David'}
+# Decoded matrix:
+# Pedro → 0 10 0 0
+# Pilar → 0 0 20 0
+# Andrea → 0 0 0 30
+# David → 40 0 0 0
+# 📊 Debt Analysis
+# ========================================
+# Person             Owes      Is Owed  Net Balance
+# ------------------------------------------------
+# Pedro                10           40           30
+# Pilar                20           10          -10
+# Andrea               30           20          -10
+# David                40           30          -10
+#
+#📌 Insights
+#----------------------------------------
+#💰 Most Owed To: Pedro (is owed 40)
+#🧾 Owes the Most: David (owes 40)
+#📈 Top Creditor: Pedro (net +30)
+#📉 Top Debtor: Pilar (net -10)
+#
+#🔁 Debt Cycles
+#----------------------------------------
+#🔄 Cycle 1: David → Pedro → Pilar → Andrea → David
+#   ⚖️ Potential to cancel up to 10 within this cycle
+#
+#💡 Settlement Suggestions
+#----------------------------------------
+#💸 Pilar should pay Pedro → 10
+#💸 Andrea should pay Pedro → 10
+#💸 David should pay Pedro → 10
+#
+#🔎 Do you want to find a cycle A → B → shortest path back to A? (y/n):y
+#
+#
+#Available node names: ['Pedro', 'Pilar', 'Andrea', 'David']
+#Enter the starting node A: Pedro
+#Enter the second node B (must be directly owed by A): Pilar
+#
+#🔁 Debt cycle using shortest path:
+#Pedro → Pilar → Andrea → David → Pedro
+#   ⚖️ Potential to cancel up to 10
+#
+#🔁 Debt cycle using shortest path:
+#Pedro → Pilar → Andrea → David → Pedro
+#   ⚖️ Potential to cancel up to 10
+#
+#💡 Suggested settlements to cancel this cycle (amount: 10):
+#💸 Pedro should pay Pilar → 10
+#💸 Pilar should pay Andrea → 10
+#💸 Andrea should pay David → 10
+#💸 David should pay Pedro → 10
+#
+#
+#🤝 Alternative: Suggested condonations to cancel this cycle (amount: 10):
+#🙅‍♂️ Pilar could forgive Pedro → 10
+#🙅‍♂️ Andrea could forgive Pilar → 10
+#🙅‍♂️ David could forgive Andrea → 10
+#🙅‍♂️ Pedro could forgive David → 10
+#
+#✅ Either option will remove 10 from each link in the cycle.
+#
+#
+#🔧 Applied settlement: 10 removed from each link in the cycle.
+#✅ Updated matrix reflects reduced debts in this cycle.
+#
+#Updated matrix= [
+#    [0, 0, 0, 0],
+#    [0, 0, 10, 0],
+#    [0, 0, 0, 20],
+#    [30, 0, 0, 0],
+#]
+#
 
 import base64
 import json
@@ -249,7 +318,7 @@ def find_debt_cycle_shortest_back(matrix, node_names, start_node, second_node):
 
 def suggest_settlements_from_cycle(matrix, node_names, cycle):
     """
-    Suggest direct settlements to cancel a cycle by its minimum transfer amount.
+    Suggest direct settlements or condonations to cancel a cycle by its minimum transfer amount.
 
     Args:
         matrix (List[List[int]]): The original adjacency matrix.
@@ -260,7 +329,6 @@ def suggest_settlements_from_cycle(matrix, node_names, cycle):
         print("⚠️ Invalid cycle provided.")
         return
 
-    # Create lookup from name to index
     name_to_index = {v: k for k, v in node_names.items()}
 
     # Compute the minimum transferable amount in the cycle
@@ -276,7 +344,13 @@ def suggest_settlements_from_cycle(matrix, node_names, cycle):
         receiver = cycle[i + 1]
         print(f"💸 {payer} should pay {receiver} → {min_transfer}")
 
-    print(f"\n✅ This will remove {min_transfer} from each link in the cycle.")
+    print(f"\n🤝 Alternative: Suggested condonations to cancel this cycle (amount: {min_transfer}):")
+    for i in range(len(cycle) - 1):
+        payer = cycle[i]
+        receiver = cycle[i + 1]
+        print(f"🙅‍♂️ {receiver} could forgive {payer} → {min_transfer}")
+
+    print(f"\n✅ Either option will remove {min_transfer} from each link in the cycle.")
 
 def apply_cycle_settlement(matrix, node_names, cycle):
     """
@@ -320,6 +394,7 @@ if __name__ == "__main__":
     print("📥 Graph Input Options:")
     print("1. Enter matrix and nodes manually")
     print("2. Paste encoded base64 code e.g. eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiRGF2aWQifSwgIm1hdHJpeCI6IFtbMCwgMTAsIDBdLCBbMTAsIDAsIDEwXSwgWzAsIDEwLCAwXV19")
+    # e.g. eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiQW5kcmVhIiwgIjMiOiAiRGF2aWQifSwgIm1hdHJpeCI6IFtbMCwgMTAsIDAsIDBdLCBbMCwgMCwgMjAsIDBdLCBbMCwgMCwgMCwgMzBdLCBbNDAsIDAsIDAsIDBdXX0=
     choice = input("Select an option (1 or 2): ").strip()
 
     if choice == '1':
