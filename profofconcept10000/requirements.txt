@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+quantcrypt
+pycryptodome
+requests
+networkx
+python-igraph
+matplotlib
