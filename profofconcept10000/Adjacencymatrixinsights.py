@@ -108,6 +108,9 @@ import base64
 import json
 import networkx as nx
 from copy import deepcopy
+from core_igraph import dijkstra_igraph_to_target
+from networkplot_igraph import visualize_path_undirected
+
 
 
 #
@@ -271,42 +274,44 @@ def validate_decoded_matrix(matrix):
     else:
         print("✅ Decoded matrix is valid and symmetric.")
 
+
+
 def find_debt_cycle_shortest_back(matrix, node_names, start_node, second_node):
     """
-    Find a debt cycle that starts at `start_node`, goes to `second_node`, and returns
-    to `start_node` through the shortest weighted path from B back to A.
+    Find and visualize a debt cycle using igraph + networkplot_igraph visualization.
     """
-    G = nx.DiGraph()
-    n = len(matrix)
+    from core_igraph import dijkstra_igraph_to_target
 
-    # Build the graph
-    for i in range(n):
-        for j in range(n):
-            if matrix[i][j] > 0:
-                G.add_edge(node_names[i], node_names[j], weight=matrix[i][j])
+    name_to_index = {v: k for k, v in node_names.items()}
+    index_to_name = {k: v for k, v in node_names.items()}
 
-    if not G.has_edge(start_node, second_node):
+    if start_node not in name_to_index or second_node not in name_to_index:
+        print("❌ Invalid node names.")
+        return None
+
+    u = name_to_index[start_node]
+    v = name_to_index[second_node]
+
+    if matrix[u][v] <= 0:
         print(f"❌ No direct debt from {start_node} to {second_node}.")
         return None
 
-    try:
-        # Find shortest path from B to A
-        path_back = nx.shortest_path(G, source=second_node, target=start_node, weight='weight')
-    except nx.NetworkXNoPath:
+    path_back_indices = dijkstra_igraph_to_target(matrix, v, u, node_names)
+
+    if not path_back_indices or len(path_back_indices) < 2:
         print(f"❌ No path from {second_node} back to {start_node}.")
         return None
 
-    # Form the full cycle: A → B → shortest path from B to A
-    cycle = [start_node, second_node] + path_back[1:]
+    cycle_indices = [u, v] + path_back_indices[1:]
+    cycle = [index_to_name[i] for i in cycle_indices]
 
-    print(f"\n🔁 Debt cycle using shortest path:")
+    print(f"\n🔁 Debt cycle using shortest path (via igraph):")
     print(" → ".join(cycle))
 
-    # Only evaluate consecutive edges in the cycle (no wraparound)
     try:
         min_transfer = min(
-            G[cycle[i]][cycle[i + 1]]['weight']
-            for i in range(len(cycle) - 1)
+            matrix[cycle_indices[i]][cycle_indices[i + 1]]
+            for i in range(len(cycle_indices) - 1)
         )
     except KeyError as e:
         print(f"❌ Invalid edge in constructed cycle: {e}")
@@ -314,7 +319,12 @@ def find_debt_cycle_shortest_back(matrix, node_names, start_node, second_node):
 
     print(f"   ⚖️ Potential to cancel up to {min_transfer}")
 
+    # 🔍 Call the networkplot_igraph visualizer
+    visualize_path_undirected(matrix, node_names, cycle, title="🔁 Ciclo de deuda resaltado")
+
     return cycle
+
+
 
 def suggest_settlements_from_cycle(matrix, node_names, cycle):
     """

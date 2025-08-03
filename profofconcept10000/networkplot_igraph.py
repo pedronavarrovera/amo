@@ -41,6 +41,69 @@ def input_adjacency_matrix(size):
                 print("Error:", e)
     return matrix
 
+def visualize_path_undirected(adjacency_matrix, node_names_dict, path_node_names, title="Visualización del ciclo de deuda"):
+    """
+    Visualizes a given path (cycle) in an undirected graph with edge weights.
+
+    Args:
+        adjacency_matrix (list of lists): Adjacency matrix of the graph.
+        node_names_dict (dict): Mapping of node index to name (e.g., {0: "Pedro", ...}).
+        path_node_names (list): Sequence of node names representing the cycle or path.
+        title (str): Plot title.
+    """
+    from igraph import Graph
+    import matplotlib.pyplot as plt
+
+    n = len(adjacency_matrix)
+    name_to_index = {v: k for k, v in node_names_dict.items()}
+    people = [node_names_dict[i] for i in range(n)]
+
+    edges = []
+    weights = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            weight = adjacency_matrix[i][j]
+            if weight != 0:
+                edges.append((i, j))
+                weights.append(weight)
+
+    g = Graph(edges=edges, directed=False)
+    g.add_vertices(n - len(g.vs))  # ensure n nodes
+    g.es["weight"] = weights
+    g.vs["label"] = people
+
+    # Extract index path
+    path_indices = [name_to_index[name] for name in path_node_names]
+    path_edges = [(path_indices[i], path_indices[i + 1]) for i in range(len(path_indices) - 1)]
+
+    coords = g.layout("fr")
+    pos = {i: coords[i] for i in range(n)}
+
+    plt.figure(figsize=(12, 10))
+    for edge in g.es:
+        i, j = edge.tuple
+        color = 'red' if (i, j) in path_edges or (j, i) in path_edges else 'gray'
+        x = [pos[i][0], pos[j][0]]
+        y = [pos[i][1], pos[j][1]]
+        plt.plot(x, y, color=color, linewidth=2)
+
+    for i in range(n):
+        x, y = pos[i]
+        plt.scatter(x, y, s=1000, c='lightblue', edgecolors='black', zorder=3)
+        plt.text(x, y, people[i], ha='center', va='center', fontsize=9, weight='bold')
+
+    for edge in g.es:
+        i, j = edge.tuple
+        x = (pos[i][0] + pos[j][0]) / 2
+        y = (pos[i][1] + pos[j][1]) / 2
+        label = edge["weight"]
+        plt.text(x, y, str(label), fontsize=8, ha='center', va='center', backgroundcolor='white')
+
+    plt.title(title)
+    plt.axis('off')
+    plt.show()
+
+
 # Modo de entrada
 modo = input("¿Cómo quieres introducir la matriz? (aleatoria/manual): ").strip().lower()
 n = int(input("Número de personas (nodos): "))

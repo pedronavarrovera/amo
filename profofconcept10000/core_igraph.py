@@ -211,12 +211,8 @@ def dijkstra_igraph_to_target(adjacency_matrix, start_vertex, destination_vertex
         node_name = node_names.get(node_id, str(node_id))
         print(f"{node_id} {node_name}", end=" ")
 
-        if i < len(path) - 1:
-            sender = node_name
-            receiver = node_names.get(path[i + 1], str(path[i + 1]))
-            message = f"Secure message from {sender} to {receiver} during path traversal."
-            send_secure_message(sender, receiver, message, shared_secret_sender)
     print()
+    return path  # ← This line allows to return the path
 
 # Generates a random 100x100 adjacency matrix of weights in range [0, max_weight)
 # Calls both dijkstra_igraph_all() from Pedro (node 0) and dijkstra_igraph_to_target() from Pedro to Valentina (node 12)
