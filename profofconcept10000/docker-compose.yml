@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  debtcycle-api:
+    build: .
+    container_name: debtcycle-api
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTMARK_TOKEN=dfc99995-7d73-45d0-8bfa-7e6a0f8ad335
+      # your-postmark-server-token
+      - MESSAGE_STREAM=amoserver1messagestream
+    volumes:
+      - .:/app
+    restart: unless-stopped

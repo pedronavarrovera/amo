@@ -93,22 +93,22 @@ def send_email_via_postmark_http(
 
 #
 # Example usage using curl:
-send_email_via_postmark_http(
-    server_token="dfc99995-7d73-45d0-8bfa-7e6a0f8ad335",
-    from_email="info@cybereu.eu",
-    to_email="info@cybereu.eu",
-    subject="Hello from Postmark",
-    html_body="<strong>Hello</strong> dear Postmark user.",
-    message_stream="amoserver1messagestream"
-)
+#send_email_via_postmark_http(
+#    server_token="dfc99995-7d73-45d0-8bfa-7e6a0f8ad335",
+#    from_email="info@cybereu.eu",
+#    to_email="info@cybereu.eu",
+#    subject="Hello from Postmark",
+#    html_body="<strong>Hello</strong> dear Postmark user.",
+#    message_stream="amoserver1messagestream"
+#)
 
 
 # Example Usage
-send_email_via_provider(
-    provider="gmail",
-    sender_email="amoserver1@gmail.com",
-    sender_password=opaque_nodes_prefix(),
-    recipient_email="pjnavarrov@gmail.com",
-    subject="Hello from Python",
-    body="This message was sent without prompting for a password."
-)
+# send_email_via_provider(
+#    provider="gmail",
+#    sender_email="amoserver1@gmail.com",
+#    sender_password=opaque_nodes_prefix(),
+#    recipient_email="pjnavarrov@gmail.com",
+#    subject="Hello from Python",
+#    body="This message was sent without prompting for a password."
+#)
