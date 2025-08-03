@@ -22,8 +22,12 @@
 # From the detected cycle:
 # Find the minimum transferable amount M across the cycle,
 # Suggest direct payments from each person to the next to settle it
+# Alternative: Suggested condonations to cancel this cycle
+# send a secure (post-quantum encryption) condonation email if desired via Postmark HTTP API
+# the email is sent to all participants in the cycle, where each participant has an email of the form node_name@cybereu.eu
 # Reduce all edges in the cycle by M, effectively simplifying the loop
 # Applies the settlements by subtracting the minimum transferable amount from each debt in the cycle, updating the matrix directly
+# 
 # For instance:
 # Pedro owes Pilar 10
 # Pilar owes Andrea 20
@@ -62,6 +66,9 @@
 #💸 Andrea should pay Pedro → 10
 #💸 David should pay Pedro → 10
 #
+#
+#
+#
 #🔎 Do you want to find a cycle A → B → shortest path back to A? (y/n):y
 #
 #
@@ -92,6 +99,11 @@
 #
 #✅ Either option will remove 10 from each link in the cycle.
 #
+# Uses the networkplot_igraph visualizer to draw the cycle in red on a Fruchterman-Reingold layout
+# Arrows point from debtor to creditor
+# Red edges show the cycle path
+# All node names and edge weights are displayed
+# Edge directions now reflect actual debt direction
 #
 #🔧 Applied settlement: 10 removed from each link in the cycle.
 #✅ Updated matrix reflects reduced debts in this cycle.
@@ -103,14 +115,50 @@
 #    [30, 0, 0, 0],
 #]
 #
+#
+#
+#
+#Do you want to send a secure condonation email? (y/n): y
+#
+#📄 Email Body to Encrypt:
+# Subject: Suggested Condonations to Cancel Debt Cycle
+#
+#Hello,
+#
+#Based on the current debt analysis, we identified a cycle of obligations:
+#
+#Pedro → Pilar → Andrea → David → Pedro → Pedro
+#
+#The minimum transferable amount in this cycle is: 10 units.
+#
+#💡 Alternative: Suggested condonations:
+#🙅‍♂️ Pilar could forgive Pedro → 10 units
+#🙅‍♂️ Andrea could forgive Pilar → 10 units
+#🙅‍♂️ David could forgive Andrea → 10 units
+#🙅‍♂️ Pedro could forgive David → 10 units
+#
+#✅ If each creditor forgives this amount, 10 will be removed from every link in the cycle.
+#
+#Regards,
+#DebtCycleAnalyzer
+#
+#🔐 Encrypted Email (Base64):
+# JfG74In+RqmihYfp/2dU5yR6F2Q/I7lUS7Ee0itgmztctMfR+mpEhe1uvy74HwQwd2cUBykUOfTRjekgsxGfWVT4+p0qrJnkpNJjGGlTlVxX8mQV/vcmTanYDHSiW82cXFHRlYGcvv+/LW3CzpnXudAk2elDiUG6LHBIpx+I5BXkMK6UgZfny3eTR2THAiB6d2teJECQUBTbV8HTjHqfxERkuqa3fDcI4G9apppFimGH15f4rEuaGIJIM0xn5bMfHJUXIXuImykWEZU6DYHD8f590iy/7BuVfImMabk3QXVAuw1VFEic5Yz3KM+xUcd3IxN3bgLlJAgOllvxS9IjCrEHzdnALByHLxW8ywAasjjRRTtsmnyzjZWBpF19LQfwFwC27JLMjBRhg+UulPg/vnIdDATeM/RSkYdOL7qHtCznv2SA0rhYn8hvuR30eVEBmSPagB/A19KE1eW9i9yq1vtpVECHkxFRhURrBoYRQORUgLHh3n6U45PzpxJpZ1oLeuBnpDRDoxsBiGzkfNCW4xzzVQke+HnlywNYvPfSOsExAd2iobypy4iNMuqQbm5vq5jSl8ZDKkmV2QeGn3OdVeTk9fhoqmTgknHYFXzL8kQtATicEZUbJRDrEKDQPATrZII/2nyAGvAx80UoB84sBVJ5Fw7yDTEyMjKmkfMiCeU+pA9yOe6eAnG1jf3DtFAggUmDRFFPXKucF9SLRz8+EpvgnsTwS5Tt3qyrAoGVKhPmbDlgLDDusQkvjvt9lQmwRBfUoMM92MESBh5pwabjYcOhVwfdC6gIvaF+kOzwMcmOi0bEz401wRC1JI1Irg+P0bNf0MOcXvj0p4wAordQ8p6ZMqazhDBa6GltDVdEg8M=
+#Email sent successfully via Postmark HTTP API.
+#Email sent successfully via Postmark HTTP API.
+#Email sent successfully via Postmark HTTP API.
+#Email sent successfully via Postmark HTTP API.
+#
+# 🔓 Decrypted Email Message is calculated based on the shared key
 
 import base64
 import json
 import networkx as nx
 from copy import deepcopy
 from core_igraph import dijkstra_igraph_to_target
-from networkplot_igraph import visualize_path_undirected
-
+from networkplot_igraph import visualize_path_directed
+from quantum import MLKEM_512, encrypt_message, decrypt_message
+from communicationsviaemail import send_email_via_postmark_http
 
 
 #
@@ -320,7 +368,7 @@ def find_debt_cycle_shortest_back(matrix, node_names, start_node, second_node):
     print(f"   ⚖️ Potential to cancel up to {min_transfer}")
 
     # 🔍 Call the networkplot_igraph visualizer
-    visualize_path_undirected(matrix, node_names, cycle, title="🔁 Ciclo de deuda resaltado")
+    visualize_path_directed(matrix, node_names, cycle, title="🔁 Ciclo de deuda dirigido")
 
     return cycle
 
@@ -398,6 +446,30 @@ def apply_cycle_settlement(matrix, node_names, cycle):
         print("    " + str(row) + ",")
     print("]")
 
+# email body generator (for condonations)
+
+def generate_condonation_email(cycle, min_transfer):
+    """
+    Generate the email body text for suggested condonations in a debt cycle.
+    """
+    if not cycle or len(cycle) < 2:
+        return "⚠️ Invalid cycle."
+
+    body = "Subject: Suggested Condonations to Cancel Debt Cycle\n\n"
+    body += "Hello,\n\nBased on the current debt analysis, we identified a cycle of obligations:\n\n"
+    body += " → ".join(cycle) + f" → {cycle[0]}\n"
+    body += f"\nThe minimum transferable amount in this cycle is: {min_transfer} units.\n"
+    body += "\n💡 Alternative: Suggested condonations:\n"
+
+    for i in range(len(cycle) - 1):
+        payer = cycle[i]
+        receiver = cycle[i + 1]
+        body += f"🙅‍♂️ {receiver} could forgive {payer} → {min_transfer} units\n"
+
+    body += f"\n✅ If each creditor forgives this amount, {min_transfer} will be removed from every link in the cycle.\n"
+    body += "\nRegards,\nDebtCycleAnalyzer"
+    return body
+
 
 # === MAIN EXECUTION ===
 if __name__ == "__main__":
@@ -461,4 +533,63 @@ if __name__ == "__main__":
     cycle = find_debt_cycle_shortest_back(adjacency_matrix, node_names, start_node, second_node)
     if cycle:
         suggest_settlements_from_cycle(adjacency_matrix, node_names, cycle)
-        apply_cycle_settlement(adjacency_matrix, node_names, cycle)
+        
+                # === OPTIONAL: Send encrypted condonation email ===
+        secure_email_choice = input("\n📧 Do you want to send a secure condonation email? (y/n): ").strip().lower()
+        if secure_email_choice == 'y':
+            
+            # Recompute min_transfer
+            name_to_index = {v: k for k, v in node_names.items()}
+            min_transfer = float('inf')
+            for i in range(len(cycle) - 1):
+                u = name_to_index[cycle[i]]
+                v = name_to_index[cycle[i + 1]]
+                min_transfer = min(min_transfer, adjacency_matrix[u][v])
+
+            # Generate email content
+            email_body = generate_condonation_email(cycle, min_transfer)
+            print("\n📄 Email Body to Encrypt:\n", email_body)
+
+            # Quantum-safe key encapsulation
+            # Post-quantum key exchange
+            kem = MLKEM_512()
+            public_key, secret_key = kem.keygen()
+            ciphertext, shared_secret_sender = kem.encaps(public_key)
+            shared_secret_receiver = kem.decaps(secret_key, ciphertext)
+
+            # Encrypt message body
+            encrypted = encrypt_message(email_body, shared_secret_sender)
+            print("\n🔐 Encrypted Email (Base64):\n", encrypted)
+
+            # Construct HTML email
+            html_body = f"""
+            <h2>🔐 Encrypted Condonation Email</h2>
+            <p>This message has been encrypted using post-quantum AES-256 derived from ML-KEM-512.</p>
+            <p><strong>Participants in the cycle:</strong> {' → '.join(cycle)} → {cycle[0]}</p>
+            <pre style="background-color:#f4f4f4;padding:10px;border:1px solid #ccc;">{encrypted}</pre>
+            <p>Each recipient must use the corresponding decryption key to view the message.</p>
+            """
+
+            # Build recipients list: include each cycle participant at {name}@cybereu.eu
+            to_emails = list({f"{name}@cybereu.eu" for name in cycle})
+
+            # Loop through recipients
+            for recipient_email in to_emails:
+                send_email_via_postmark_http(
+                    server_token="dfc99995-7d73-45d0-8bfa-7e6a0f8ad335",
+                    from_email="info@cybereu.eu",
+                    to_email=recipient_email,
+                    subject="🔐 Encrypted Condonation Suggestion",
+                    html_body=html_body,
+                    message_stream="amoserver1messagestream"
+                )
+
+            # Decrypt and verify
+            decrypted = decrypt_message(encrypted, shared_secret_receiver)
+            print("\n🔓 Decrypted Email Message:\n", decrypted)
+
+            # Apply settlements
+            apply_cycle_settlement(adjacency_matrix, node_names, cycle)
+        else:
+            print("🕊️ Secure email skipped.")
+

@@ -41,151 +41,169 @@ def input_adjacency_matrix(size):
                 print("Error:", e)
     return matrix
 
-def visualize_path_undirected(adjacency_matrix, node_names_dict, path_node_names, title="Visualización del ciclo de deuda"):
+def visualize_path_directed(adjacency_matrix, node_names_dict, path_node_names, title="🔁 Ciclo de deuda dirigido"):
     """
-    Visualizes a given path (cycle) in an undirected graph with edge weights.
+    Visualizes a directed path or cycle in a debt graph with arrows from debtor to creditor.
 
     Args:
-        adjacency_matrix (list of lists): Adjacency matrix of the graph.
-        node_names_dict (dict): Mapping of node index to name (e.g., {0: "Pedro", ...}).
-        path_node_names (list): Sequence of node names representing the cycle or path.
+        adjacency_matrix (list of lists): The adjacency matrix.
+        node_names_dict (dict): Mapping of index to name.
+        path_node_names (list): Sequence of node names forming the cycle.
         title (str): Plot title.
     """
-    from igraph import Graph
-    import matplotlib.pyplot as plt
 
     n = len(adjacency_matrix)
     name_to_index = {v: k for k, v in node_names_dict.items()}
+    index_to_name = {k: v for k, v in node_names_dict.items()}
     people = [node_names_dict[i] for i in range(n)]
 
+    # Build directed graph
     edges = []
     weights = []
     for i in range(n):
-        for j in range(i + 1, n):
-            weight = adjacency_matrix[i][j]
-            if weight != 0:
-                edges.append((i, j))
-                weights.append(weight)
+        for j in range(n):
+            if adjacency_matrix[i][j] > 0:
+                edges.append((i, j))  # debtor (i) → creditor (j)
+                weights.append(adjacency_matrix[i][j])
 
-    g = Graph(edges=edges, directed=False)
-    g.add_vertices(n - len(g.vs))  # ensure n nodes
+    g = Graph(directed=True)
+    g.add_vertices(n)
+    g.add_edges(edges)
     g.es["weight"] = weights
     g.vs["label"] = people
 
-    # Extract index path
+    # Identify path edges (in index form)
     path_indices = [name_to_index[name] for name in path_node_names]
     path_edges = [(path_indices[i], path_indices[i + 1]) for i in range(len(path_indices) - 1)]
 
+    # Layout
     coords = g.layout("fr")
     pos = {i: coords[i] for i in range(n)}
 
+    # Plot setup
     plt.figure(figsize=(12, 10))
+
+    # Draw edges with arrows
     for edge in g.es:
         i, j = edge.tuple
-        color = 'red' if (i, j) in path_edges or (j, i) in path_edges else 'gray'
-        x = [pos[i][0], pos[j][0]]
-        y = [pos[i][1], pos[j][1]]
-        plt.plot(x, y, color=color, linewidth=2)
+        x0, y0 = pos[i]
+        x1, y1 = pos[j]
+        color = 'red' if (i, j) in path_edges else 'gray'
 
+        dx = x1 - x0
+        dy = y1 - y0
+        plt.arrow(x0, y0, dx * 0.85, dy * 0.85,
+                  length_includes_head=True,
+                  head_width=0.03,
+                  head_length=0.05,
+                  fc=color,
+                  ec=color,
+                  linewidth=2,
+                  alpha=0.8)
+
+    # Draw nodes
     for i in range(n):
         x, y = pos[i]
         plt.scatter(x, y, s=1000, c='lightblue', edgecolors='black', zorder=3)
         plt.text(x, y, people[i], ha='center', va='center', fontsize=9, weight='bold')
 
+    # Draw edge labels
     for edge in g.es:
         i, j = edge.tuple
-        x = (pos[i][0] + pos[j][0]) / 2
-        y = (pos[i][1] + pos[j][1]) / 2
-        label = edge["weight"]
-        plt.text(x, y, str(label), fontsize=8, ha='center', va='center', backgroundcolor='white')
+        if (i, j) in path_edges:
+            x = (pos[i][0] + pos[j][0]) / 2
+            y = (pos[i][1] + pos[j][1]) / 2
+            label = edge["weight"]
+            plt.text(x, y, str(label), fontsize=8, ha='center', va='center', backgroundcolor='white')
 
     plt.title(title)
     plt.axis('off')
     plt.show()
 
 
-# Modo de entrada
-modo = input("¿Cómo quieres introducir la matriz? (aleatoria/manual): ").strip().lower()
-n = int(input("Número de personas (nodos): "))
 
-if modo == "manual":
-    adjacency_matrix = input_adjacency_matrix(n)
-else:
-    adjacency_matrix = generate_random_adjacency_matrix(n)
-
-print("\nMatriz de adyacencia generada:")
-for fila in adjacency_matrix:
-    print(" ".join(f"{num:2d}" for num in fila))
-
-people = [f"Persona{i}" for i in range(n)]
-print("\nNodos disponibles:", ", ".join(people))
-
-source_index = int(input(f"Selecciona índice de origen (0 a {n-1}): "))
-target_index = int(input(f"Selecciona índice de destino (0 a {n-1}): "))
-source = source_index
-target = target_index
-
-edges = []
-weights = []
-for i in range(n):
-    for j in range(i+1, n):
-        weight = adjacency_matrix[i][j]
-        if weight != 0:
-            edges.append((i, j))
-            weights.append(weight)
-
-g = Graph(edges=edges, directed=False)
-g.add_vertices(n - len(g.vs))  # ensure n nodes
-g.es["weight"] = weights
-g.vs["label"] = people
-
+# Modo de entrada for testing
+# modo = input("¿Cómo quieres introducir la matriz? (aleatoria/manual): ").strip().lower()
+# n = int(input("Número de personas (nodos): "))
+#
+#if modo == "manual":
+#    adjacency_matrix = input_adjacency_matrix(n)
+#else:
+#    adjacency_matrix = generate_random_adjacency_matrix(n)
+#
+#print("\nMatriz de adyacencia generada:")
+#for fila in adjacency_matrix:
+#   print(" ".join(f"{num:2d}" for num in fila))
+#
+#people = [f"Persona{i}" for i in range(n)]
+#print("\nNodos disponibles:", ", ".join(people))
+#
+#source_index = int(input(f"Selecciona índice de origen (0 a {n-1}): "))
+#target_index = int(input(f"Selecciona índice de destino (0 a {n-1}): "))
+#source = source_index
+#target = target_index
+#
+#edges = []
+#weights = []
+#for i in range(n):
+#    for j in range(i+1, n):
+#        weight = adjacency_matrix[i][j]
+#        if weight != 0:
+#            edges.append((i, j))
+#            weights.append(weight)
+#
+#g = Graph(edges=edges, directed=False)
+#g.add_vertices(n - len(g.vs))  # ensure n nodes
+#g.es["weight"] = weights
+#g.vs["label"] = people
+#
 # Shortest path
-try:
-    path = g.get_shortest_paths(source, to=target, weights="weight", output="vpath")[0]
-    if not path:
-        raise ValueError("No hay ruta disponible.")
-    print(f"\nRuta más corta encontrada: {' → '.join(people[i] for i in path)}")
-    print("Saltos y costes:")
-    total_cost = 0
-    path_edges = []
-    for i in range(len(path) - 1):
-        eid = g.get_eid(path[i], path[i+1])
-        w = g.es[eid]['weight']
-        total_cost += w
-        path_edges.append((path[i], path[i+1]))
-        print(f"  {people[path[i]]} → {people[path[i+1]]}: coste {w}")
-    print(f"Coste total de la ruta: {total_cost}")
-except:
-    path = []
-    path_edges = []
-    print("\nNo hay ruta entre los nodos seleccionados.")
-
+#try:
+#    path = g.get_shortest_paths(source, to=target, weights="weight", output="vpath")[0]
+#    if not path:
+#        raise ValueError("No hay ruta disponible.")
+#    print(f"\nRuta más corta encontrada: {' → '.join(people[i] for i in path)}")
+#    print("Saltos y costes:")
+#    total_cost = 0
+#    path_edges = []
+#    for i in range(len(path) - 1):
+#        eid = g.get_eid(path[i], path[i+1])
+#        w = g.es[eid]['weight']
+#        total_cost += w
+#        path_edges.append((path[i], path[i+1]))
+#        print(f"  {people[path[i]]} → {people[path[i+1]]}: coste {w}")
+#    print(f"Coste total de la ruta: {total_cost}")
+#except:
+#    path = []
+#    path_edges = []
+#    print("\nNo hay ruta entre los nodos seleccionados.")
+#
 # Matplotlib visualization similar to networkx
-coords = g.layout("fr")
-pos = {i: coords[i] for i in range(n)}
-
-plt.figure(figsize=(12, 10))
-for edge in g.es:
-    i, j = edge.tuple
-    color = 'red' if (i, j) in path_edges or (j, i) in path_edges else 'gray'
-    x = [pos[i][0], pos[j][0]]
-    y = [pos[i][1], pos[j][1]]
-    plt.plot(x, y, color=color, linewidth=2)
-
+#coords = g.layout("fr")
+#pos = {i: coords[i] for i in range(n)}
+#
+#plt.figure(figsize=(12, 10))
+#for edge in g.es:
+#    i, j = edge.tuple
+#    color = 'red' if (i, j) in path_edges or (j, i) in path_edges else 'gray'
+#    x = [pos[i][0], pos[j][0]]
+#    y = [pos[i][1], pos[j][1]]
+#    plt.plot(x, y, color=color, linewidth=2)
+#
 # Draw nodes
-for i in range(n):
-    x, y = pos[i]
-    plt.scatter(x, y, s=1000, c='lightblue', edgecolors='black', zorder=3)
-    plt.text(x, y, people[i], ha='center', va='center', fontsize=9, weight='bold')
-
+#for i in range(n):
+#    x, y = pos[i]
+#    plt.scatter(x, y, s=1000, c='lightblue', edgecolors='black', zorder=3)
+#    plt.text(x, y, people[i], ha='center', va='center', fontsize=9, weight='bold')
+#
 # Draw edge labels
-for edge in g.es:
-    i, j = edge.tuple
-    x = (pos[i][0] + pos[j][0]) / 2
-    y = (pos[i][1] + pos[j][1]) / 2
-    label = edge["weight"]
-    plt.text(x, y, str(label), fontsize=8, ha='center', va='center', backgroundcolor='white')
-
-plt.title(f"Ruta más corta de {people[source]} a {people[target]}" + (" (en rojo)" if path else " - NO CONECTADOS"))
-plt.axis('off')
-plt.show()
+#for edge in g.es:
+#    i, j = edge.tuple
+#    x = (pos[i][0] + pos[j][0]) / 2
+#    y = (pos[i][1] + pos[j][1]) / 2
+#    label = edge["weight"]
+#    plt.text(x, y, str(label), fontsize=8, ha='center', va='center', backgroundcolor='white')
+#
+#plt.title(f"Ruta más corta de {people[source]} a {people[target]}" + (" (en rojo)" if path else " - NO CONECTADOS"))
+#plt.axis('off')
+#plt.show()
