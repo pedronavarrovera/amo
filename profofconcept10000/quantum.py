@@ -1,8 +1,3 @@
-# Post-Quantum Encryption Flow
-# This code combines PyCryptodome (for AES encryption) with a post-quantum key exchange using quantcrypt,
-#  so you get a full quantum-safe encryption flow
-# Post-Quantum Key Exchange: MLKEM_512 (Kyber)
-# Symmetric Encryption: AES-256 (CBC) via PyCryptodome
 # Quantum-safe end-to-end encryption
 # Post-quantum safe: Even if an attacker intercepts the ciphertext, they cannot derive the shared secret
 # unless they can break Kyber (which resists quantum attacks)
@@ -12,6 +7,14 @@
 # Selected by NIST in 2022 as the primary standard for post-quantum public key encryption and key exchange.
 # Lattice-based cryptography is a type of cryptographic system that builds its security on the hardness of certain mathematical problems involving lattices
 #  — regular grid-like arrangements of points in multi-dimensional space
+
+# Post-Quantum Encryption Flow
+# This code combines PyCryptodome (for AES encryption) with a post-quantum key exchange using quantcrypt,
+#  so you get a full quantum-safe encryption flow
+# Post-Quantum Key Exchange: MLKEM_512 (Kyber)
+# Symmetric Encryption: AES-256 (CBC) via PyCryptodome
+
+
 
 from quantcrypt.kem import MLKEM_512
 from Cryptodome.Cipher import AES
