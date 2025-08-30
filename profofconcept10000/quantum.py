@@ -20,14 +20,20 @@ from Cryptodome.Random import get_random_bytes
 import base64
 
 # 1. Key Encapsulation with ML-KEM-512 (Kyber512)
+
 kem = MLKEM_512()
 public_key, secret_key = kem.keygen()       # generates a public/private key pair
+
+# from the sender’s side
 ciphertext, shared_secret_sender = kem.encaps(public_key)       # uses the public key to generate a ciphertext and a shared secret (from the sender’s side)
+
+# the receiver’s side
 shared_secret_receiver = kem.decaps(secret_key, ciphertext)     # uses the private key and the ciphertext to reconstruct the same shared secret (on the receiver’s side).
 
 assert shared_secret_sender == shared_secret_receiver           # ensures that both sides now hold identical shared secrets, without ever transmitting the key directly — crucial for quantum-safe communication
 
 # 2. AES-256 Encryption using shared post-quantum key
+
 def encrypt_message(message: str, key: bytes) -> str:
     cipher = AES.new(key[:32], AES.MODE_CBC)  # Use 32 bytes for AES-256
     ct = cipher.encrypt(pad(message.encode(), AES.block_size))      # Encrypts using AES-256 in CBC mode (using the first 32 bytes of the shared key). The message is padded to match the AES block size (16 bytes).
