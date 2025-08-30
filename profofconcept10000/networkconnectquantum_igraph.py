@@ -1,5 +1,5 @@
 # Bridge-Embedded Block Diagonal Merge (BEBDiM) 
-# In order to interconnect 2 payment networks, the following process is innovated. This process is named "Bridge-Embedded Block Diagonal Merge"
+# In order to interconnect 2 payment networks, the following process is defined as an innovation. This process is named "Bridge-Embedded Block Diagonal Merge"
 # A block matrix composition, is specifically a type of block diagonal concatenation or matrix embedding.
 # Operation: Block Matrix Construction / Embedding also named 'Bridge-Embedded Block Diagonal Merge'.
 # Block Diagonal Merge: It means that you are performing a block diagonal embedding of two square matrices (A and B) into a larger square matrix.
