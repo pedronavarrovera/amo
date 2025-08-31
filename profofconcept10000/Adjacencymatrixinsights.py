@@ -1,32 +1,34 @@
-# Prompt you for node names and an adjacency matrix
-# Store them in node_names and adjacency_matrix
-# either enter the matrix and node names manually, or read them from a base64-encoded code
+# An adjacency matrix is a way of representing a graph (a network of nodes and edges) in the form of a square matrix
+# Suppose you have a graph with n nodes (vertices). You build an n × n matrix A. Each entry A[i][j] tells you whether there is an edge (connection) from node i to node j. 
+# This code prompts you for node names and an adjacency matrix. Store them in node_names and adjacency_matrix
+#  
+# In future releases the matrix can be consulted and updated from a storage server.
+# At this release, Either you can enter the matrix and node names manually, or read them from a base64-encoded code.
 # for example this code: eyJub2RlcyI6IHsiMCI6ICJBbGljZSIsICIxIjogIkJvYiIsICIyIjogIkNhcm9sIn0sICJtYXRyaXgiOiBbWzAsIDEsIDBdLCBbMSwgMCwgMV0sIFswLCAxLCAwXV19 
-# provides insights into a debt matrix where: 
+# The code also validates symmetry of the matrix. The code validate if the decoded matrix is square and symmetric.
+# 
+# The code also provides insights into a debt matrix where: 
 #    Nodes represent people
 #    adjacency_matrix[i][j] represents how much person i owes to person j
+#    Cycle Detection (e.g., Alice → Bob → Carol → Alice) for instance 
+#    These indicate circular debt that can be simplified or canceled
+#    Suggest indirect debts settlements: resolve the cycle with net balance reduction, avoiding redundant intermediate payments   
 # It calculates:
-# Total debt per person (how much they owe and are owed)
-# Net balance per person (creditor vs debtor)
-# Top debtors and creditors
-# Cycles (insight into circular debt if needed) detect debt cycles (like A → B → C → A) 
-# and suggest debt settlements to reduce total transactions
-# Cycle Detection (e.g., Alice → Bob → Carol → Alice) for instance 
-# These indicate circular debt that can be simplified or canceled
-#
-#
-# Suggest indirect debts settlements: resolve the cycle with net balance reduction, avoiding redundant intermediate payments
-# It finds the debt cycle shortest back given A and B as well as the matrix
-# find a debt cycle that:Starts at a given node A, Goes directly to node B, 
-# Then follows the shortest possible path from B back to A (forming a cycle).
+# 1) Total debt per person (how much they owe and are owed)
+# 2) Net balance per person (creditor vs debtor)
+# 3) Top debtors and creditors
+# 4) Cycles (insight into circular debt if needed) detect debt cycles (like A → B → C → A) 
+# and 5) suggest debt settlements to reduce total transactions
+# 6) It finds the shortest back debt cycle given A and B as well as the matrix
+# This means it finds a debt cycle that:Starts at a given node A, Goes directly to node B,Then follows the shortest possible path from B back to A (forming a cycle).
 # From the detected cycle:
-# Find the minimum transferable amount M across the cycle,
-# Suggest direct payments from each person to the next to settle it
-# Alternative: Suggested condonations to cancel this cycle
-# send a secure (post-quantum encryption) condonation email if desired via Postmark HTTP API
+# 5.1) Find the minimum transferable amount M across the cycle,
+# 5.2) Suggest direct payments from each person to the next to settle it
+# 6.1) Alternative: Suggested condonations to cancel this cycle
+# 6.2) It sends a secure (post-quantum encryption) condonation email if desired via Postmark HTTP API
 # the email is sent to all participants in the cycle, where each participant has an email of the form node_name@cybereu.eu
 # Reduce all edges in the cycle by M, effectively simplifying the loop
-# Applies the settlements by subtracting the minimum transferable amount from each debt in the cycle, updating the matrix directly
+# 6.3) Applies the settlements by subtracting the minimum transferable amount from each debt in the cycle, and shows the resulting matrix after updating the matrix directly
 # 
 # For instance:
 # Pedro owes Pilar 10
@@ -153,10 +155,12 @@
 
 import base64
 import json
+
 import networkx as nx
 from copy import deepcopy
 from core_igraph import dijkstra_igraph_to_target
 from networkplot_igraph import visualize_path_directed
+
 from quantum import MLKEM_512, encrypt_message, decrypt_message
 from communicationsviaemail import send_email_via_postmark_http
 
