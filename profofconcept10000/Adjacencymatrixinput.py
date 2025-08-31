@@ -1,7 +1,11 @@
-# Prompt you for node names and an adjacency matrix
-# Store them in node_names and adjacency_matrix
-# either enter the matrix and node names manually, or read them from a base64-encoded code
+# An adjacency matrix is a way of representing a graph (a network of nodes and edges) in the form of a square matrix
+# Suppose you have a graph with n nodes (vertices). You build an n × n matrix A. Each entry A[i][j] tells you whether there is an edge (connection) from node i to node j. 
+# This code prompts you for node names and an adjacency matrix. Store them in node_names and adjacency_matrix
+# Either you can enter the matrix and node names manually, or read them from a base64-encoded code
 # for example this code: eyJub2RlcyI6IHsiMCI6ICJBbGljZSIsICIxIjogIkJvYiIsICIyIjogIkNhcm9sIn0sICJtYXRyaXgiOiBbWzAsIDEsIDBdLCBbMSwgMCwgMV0sIFswLCAxLCAwXV19 
+# The code also validates symmetry of the matrix. The code validate if the decoded matrix is square and symmetric.
+#
+#
 import base64
 import json
 
