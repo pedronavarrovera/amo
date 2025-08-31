@@ -5,6 +5,7 @@
 # In future releases the matrix can be consulted and updated from a storage server.
 # At this release, Either you can enter the matrix and node names manually, or read them from a base64-encoded code.
 # for example this code: eyJub2RlcyI6IHsiMCI6ICJBbGljZSIsICIxIjogIkJvYiIsICIyIjogIkNhcm9sIn0sICJtYXRyaXgiOiBbWzAsIDEsIDBdLCBbMSwgMCwgMV0sIFswLCAxLCAwXV19 
+# or this code for a 5x5 matrix eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiQW5kcmVhIiwgIjMiOiAiRGF2aWQiLCAiNCI6ICJFbGVuYSJ9LCAibWF0cml4IjogW1swLCAxMCwgMCwgMCwgMF0sIFswLCAwLCAyMCwgMCwgMF0sIFswLCAwLCAwLCAzMCwgMF0sIFswLCAwLCAwLCAwLCA0MF0sIFs1MCwgMCwgMCwgMCwgMF1dfQ==
 # The code also validates symmetry of the matrix. The code validate if the decoded matrix is square and symmetric.
 # 
 # The code also provides insights into a debt matrix where: 
@@ -13,6 +14,7 @@
 #    Cycle Detection (e.g., Alice → Bob → Carol → Alice) for instance 
 #    These indicate circular debt that can be simplified or canceled
 #    Suggest indirect debts settlements: resolve the cycle with net balance reduction, avoiding redundant intermediate payments   
+# 
 # It calculates:
 # 1) Total debt per person (how much they owe and are owed)
 # 2) Net balance per person (creditor vs debtor)
@@ -28,6 +30,9 @@
 # 6.2) It sends a secure (post-quantum encryption) condonation email if desired via Postmark HTTP API
 # the email is sent to all participants in the cycle, where each participant has an email of the form node_name@cybereu.eu
 # Reduce all edges in the cycle by M, effectively simplifying the loop
+# Postmark API token is set in the environment variable POSTMARK_SERVER_TOKEN for instance dfc99995-7d73-45d0-8bfa-7e6a0f8ad335. On Windows (PowerShell):
+# $env:POSTMARK_SERVER_TOKEN="your-real-server-token"
+# $env:POSTMARK_STREAM="amoserver1messagestream"
 # 6.3) Applies the settlements by subtracting the minimum transferable amount from each debt in the cycle, and shows the resulting matrix after updating the matrix directly
 # 
 # For instance:
@@ -153,11 +158,13 @@
 #
 # 🔓 Decrypted Email Message is calculated based on the shared key
 
+import os
 import base64
 import json
+from copy import deepcopy
 
 import networkx as nx
-from copy import deepcopy
+
 from core_igraph import dijkstra_igraph_to_target
 from networkplot_igraph import visualize_path_directed
 
@@ -165,15 +172,25 @@ from quantum import MLKEM_512, encrypt_message, decrypt_message
 from communicationsviaemail import send_email_via_postmark_http
 
 
-#
+# ==========================
+# Helpers & Core Utilities
+# ==========================
+
+def canonicalize_cycle(cycle):
+    """Return a simple cycle without repeating the first node at the end."""
+    if cycle and len(cycle) > 1 and cycle[0] == cycle[-1]:
+        return cycle[:-1]
+    return cycle
+
+
 def analyze_debt_matrix(matrix, node_names):
     n = len(matrix)
-    
+
     print("\n📊 Debt Analysis")
     print("=" * 40)
-    
-    total_owed_by = {}   # Total amount each person owes
-    total_owed_to = {}   # Total amount each person is owed
+
+    total_owed_by = {}   # Total amount each person owes (row sum)
+    total_owed_to = {}   # Total amount each person is owed (column sum)
     net_balance = {}     # Positive if creditor, negative if debtor
 
     for i in range(n):
@@ -217,7 +234,7 @@ def detect_debt_cycles(matrix, node_names):
     G = nx.DiGraph()
     n = len(matrix)
 
-    # Build directed graph
+    # Build directed graph (i owes j -> edge i -> j with weight)
     for i in range(n):
         for j in range(n):
             if matrix[i][j] > 0:
@@ -225,16 +242,21 @@ def detect_debt_cycles(matrix, node_names):
 
     try:
         cycles = list(nx.simple_cycles(G))
-    except:
+    except Exception:
         cycles = []
 
     if not cycles:
         print("✅ No circular debt found.")
     else:
         for i, cycle in enumerate(cycles, 1):
-            print(f"🔄 Cycle {i}: {' → '.join(cycle)} → {cycle[0]}")
-            # Optionally, show the minimum transfer in cycle
-            min_transfer = min(G[cycle[k]][cycle[(k+1)%len(cycle)]]['weight'] for k in range(len(cycle)))
+            cycle = canonicalize_cycle(cycle)
+            ring = cycle + [cycle[0]]
+            print(f"🔄 Cycle {i}: {' → '.join(ring)}")
+            # Minimum transfer in cycle (consider wrap-around)
+            min_transfer = min(
+                G[cycle[k]][cycle[(k + 1) % len(cycle)]]['weight']
+                for k in range(len(cycle))
+            )
             print(f"   ⚖️ Potential to cancel up to {min_transfer} within this cycle")
 
 
@@ -261,7 +283,11 @@ def suggest_settlements(net_balance):
         if creditors[j][1] == 0:
             j += 1
 
-#
+
+# ==========================
+# I/O helpers
+# ==========================
+
 def read_node_names_dict(n):
     """
     Read n node names from console input and return as a dict {index: name}.
@@ -269,9 +295,11 @@ def read_node_names_dict(n):
     print(f"Enter {n} node names:")
     return {i: input(f"Node {i}: ") for i in range(n)}
 
+
 def read_adjacency_matrix(n, node_names):
     """
     Read an n x n adjacency matrix from the console with validation.
+    Note: Debts are directed; symmetry is not expected.
     """
     print(f"Enter the adjacency matrix ({n}x{n}) row by row (space-separated):")
     matrix = []
@@ -281,14 +309,14 @@ def read_adjacency_matrix(n, node_names):
             raise ValueError(f"Row {i} must have {n} elements.")
         matrix.append(row)
 
-    # Validate symmetry
-    is_symmetric = all(matrix[i][j] == matrix[j][i] for i in range(n) for j in range(n))
-    if not is_symmetric:
-        print("⚠️ Warning: The matrix is NOT symmetric.")
-    else:
-        print("✅ Matrix is symmetric.")
+    # Basic square check
+    is_square = all(len(row) == n for row in matrix)
+    if not is_square:
+        raise ValueError("❌ Matrix is not square.")
 
+    print("ℹ️ Note: Treating matrix as a directed debt graph (no symmetry check).")
     return matrix
+
 
 def encode_adjacency_matrix(matrix, node_names):
     """
@@ -301,6 +329,7 @@ def encode_adjacency_matrix(matrix, node_names):
     json_str = json.dumps(data)
     return base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
 
+
 def decode_adjacency_code(code):
     """
     Decode a base64 string back into matrix and node names.
@@ -311,29 +340,29 @@ def decode_adjacency_code(code):
     node_names = {int(k): v for k, v in data['nodes'].items()}
     return matrix, node_names
 
+
 def validate_decoded_matrix(matrix):
     """
-    Validate if the decoded matrix is square and symmetric.
+    Validate if the decoded matrix is square.
+    (No symmetry requirement; graph is directed.)
     """
     n = len(matrix)
     is_square = all(len(row) == n for row in matrix)
-    is_symmetric = all(matrix[i][j] == matrix[j][i] for i in range(n) for j in range(n))
-
     if not is_square:
         print("❌ Error: Decoded matrix is not square.")
-    elif not is_symmetric:
-        print("⚠️ Warning: Decoded matrix is NOT symmetric.")
     else:
-        print("✅ Decoded matrix is valid and symmetric.")
+        print("✅ Decoded matrix is valid (directed).")
 
 
+# ==========================
+# Cycle discovery & settlement (fixed)
+# ==========================
 
 def find_debt_cycle_shortest_back(matrix, node_names, start_node, second_node):
     """
-    Find and visualize a debt cycle using igraph + networkplot_igraph visualization.
+    Find and visualize a debt cycle using igraph shortest path back to start.
+    Returns a canonical cycle list without repeating the first node at the end.
     """
-    from core_igraph import dijkstra_igraph_to_target
-
     name_to_index = {v: k for k, v in node_names.items()}
     index_to_name = {k: v for k, v in node_names.items()}
 
@@ -354,93 +383,81 @@ def find_debt_cycle_shortest_back(matrix, node_names, start_node, second_node):
         print(f"❌ No path from {second_node} back to {start_node}.")
         return None
 
+    # path_back_indices is typically [v, ..., u]; build the full ring
     cycle_indices = [u, v] + path_back_indices[1:]
     cycle = [index_to_name[i] for i in cycle_indices]
+    cycle = canonicalize_cycle(cycle)  # normalize so last != first
 
     print(f"\n🔁 Debt cycle using shortest path (via igraph):")
-    print(" → ".join(cycle))
+    print(" → ".join(cycle + [cycle[0]]))  # display as closed ring
 
-    try:
-        min_transfer = min(
-            matrix[cycle_indices[i]][cycle_indices[i + 1]]
-            for i in range(len(cycle_indices) - 1)
-        )
-    except KeyError as e:
-        print(f"❌ Invalid edge in constructed cycle: {e}")
-        return None
-
+    # Compute min transferable amount across the whole ring (wrap-around)
+    name_to_index = {v: k for k, v in node_names.items()}
+    min_transfer = min(
+        matrix[name_to_index[cycle[i]]][name_to_index[cycle[(i + 1) % len(cycle)]]]
+        for i in range(len(cycle))
+    )
     print(f"   ⚖️ Potential to cancel up to {min_transfer}")
 
-    # 🔍 Call the networkplot_igraph visualizer
-    visualize_path_directed(matrix, node_names, cycle, title="🔁 Ciclo de deuda dirigido")
+    # Visualize (pass a closed path for drawing)
+    visualize_path_directed(matrix, node_names, cycle + [cycle[0]], title="🔁 Ciclo de deuda dirigido")
 
     return cycle
 
 
-
 def suggest_settlements_from_cycle(matrix, node_names, cycle):
     """
-    Suggest direct settlements or condonations to cancel a cycle by its minimum transfer amount.
-
-    Args:
-        matrix (List[List[int]]): The original adjacency matrix.
-        node_names (Dict[int, str]): Mapping from indices to person names.
-        cycle (List[str]): The detected cycle, e.g., ['Pedro', 'Pilar', 'David', 'Pedro']
+    Suggest direct settlements or condonations to cancel a cycle by its
+    minimum transfer amount. Cycle should be canonical.
     """
+    cycle = canonicalize_cycle(cycle)
     if not cycle or len(cycle) < 2:
         print("⚠️ Invalid cycle provided.")
         return
 
     name_to_index = {v: k for k, v in node_names.items()}
 
-    # Compute the minimum transferable amount in the cycle
-    min_transfer = float('inf')
-    for i in range(len(cycle) - 1):
-        u = name_to_index[cycle[i]]
-        v = name_to_index[cycle[i + 1]]
-        min_transfer = min(min_transfer, matrix[u][v])
-    
+    # Compute the minimum transferable amount in the cycle (wrap-around)
+    min_transfer = min(
+        matrix[name_to_index[cycle[i]]][name_to_index[cycle[(i + 1) % len(cycle)]]]
+        for i in range(len(cycle))
+    )
+
     print(f"\n💡 Suggested settlements to cancel this cycle (amount: {min_transfer}):")
-    for i in range(len(cycle) - 1):
+    for i in range(len(cycle)):
         payer = cycle[i]
-        receiver = cycle[i + 1]
+        receiver = cycle[(i + 1) % len(cycle)]
         print(f"💸 {payer} should pay {receiver} → {min_transfer}")
 
     print(f"\n🤝 Alternative: Suggested condonations to cancel this cycle (amount: {min_transfer}):")
-    for i in range(len(cycle) - 1):
+    for i in range(len(cycle)):
         payer = cycle[i]
-        receiver = cycle[i + 1]
+        receiver = cycle[(i + 1) % len(cycle)]
         print(f"🙅‍♂️ {receiver} could forgive {payer} → {min_transfer}")
 
     print(f"\n✅ Either option will remove {min_transfer} from each link in the cycle.")
+
 
 def apply_cycle_settlement(matrix, node_names, cycle):
     """
     Apply settlements to cancel a cycle by subtracting the minimum transferable amount
     from each debt in the cycle. Modifies the matrix in place.
-
-    Args:
-        matrix (List[List[int]]): The original debt matrix to be modified.
-        node_names (Dict[int, str]): Mapping from index to names.
-        cycle (List[str]): A list of node names forming a cycle (e.g. ['A', 'B', 'C', 'A'])
     """
+    cycle = canonicalize_cycle(cycle)
     if not cycle or len(cycle) < 2:
         print("⚠️ Invalid cycle.")
         return
 
     name_to_index = {v: k for k, v in node_names.items()}
 
-    # Find minimum debt along the cycle edges
-    min_transfer = float('inf')
-    for i in range(len(cycle) - 1):
-        u = name_to_index[cycle[i]]
-        v = name_to_index[cycle[i + 1]]
-        min_transfer = min(min_transfer, matrix[u][v])
+    min_transfer = min(
+        matrix[name_to_index[cycle[i]]][name_to_index[cycle[(i + 1) % len(cycle)]]]
+        for i in range(len(cycle))
+    )
 
-    # Apply settlement: subtract min_transfer from each edge in the cycle
-    for i in range(len(cycle) - 1):
+    for i in range(len(cycle)):
         u = name_to_index[cycle[i]]
-        v = name_to_index[cycle[i + 1]]
+        v = name_to_index[cycle[(i + 1) % len(cycle)]]
         matrix[u][v] -= min_transfer
 
     print(f"\n🔧 Applied settlement: {min_transfer} removed from each link in the cycle.")
@@ -450,24 +467,30 @@ def apply_cycle_settlement(matrix, node_names, cycle):
         print("    " + str(row) + ",")
     print("]")
 
-# email body generator (for condonations)
+
+# ==========================
+# Email body generator (fixed not to double-close)
+# ==========================
 
 def generate_condonation_email(cycle, min_transfer):
     """
     Generate the email body text for suggested condonations in a debt cycle.
     """
+    cycle = canonicalize_cycle(cycle)
     if not cycle or len(cycle) < 2:
         return "⚠️ Invalid cycle."
 
+    ring = cycle + [cycle[0]]
+
     body = "Subject: Suggested Condonations to Cancel Debt Cycle\n\n"
     body += "Hello,\n\nBased on the current debt analysis, we identified a cycle of obligations:\n\n"
-    body += " → ".join(cycle) + f" → {cycle[0]}\n"
+    body += " → ".join(ring) + "\n"
     body += f"\nThe minimum transferable amount in this cycle is: {min_transfer} units.\n"
     body += "\n💡 Alternative: Suggested condonations:\n"
 
-    for i in range(len(cycle) - 1):
+    for i in range(len(cycle)):
         payer = cycle[i]
-        receiver = cycle[i + 1]
+        receiver = cycle[(i + 1) % len(cycle)]
         body += f"🙅‍♂️ {receiver} could forgive {payer} → {min_transfer} units\n"
 
     body += f"\n✅ If each creditor forgives this amount, {min_transfer} will be removed from every link in the cycle.\n"
@@ -475,12 +498,14 @@ def generate_condonation_email(cycle, min_transfer):
     return body
 
 
-# === MAIN EXECUTION ===
+# ==========================
+# Main
+# ==========================
 if __name__ == "__main__":
     print("📥 Graph Input Options:")
     print("1. Enter matrix and nodes manually")
     print("2. Paste encoded base64 code e.g. eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiRGF2aWQifSwgIm1hdHJpeCI6IFtbMCwgMTAsIDBdLCBbMTAsIDAsIDEwXSwgWzAsIDEwLCAwXV19")
-    # e.g. eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiQW5kcmVhIiwgIjMiOiAiRGF2aWQifSwgIm1hdHJpeCI6IFtbMCwgMTAsIDAsIDBdLCBbMCwgMCwgMjAsIDBdLCBbMCwgMCwgMCwgMzBdLCBbNDAsIDAsIDAsIDBdXX0=
+
     choice = input("Select an option (1 or 2): ").strip()
 
     if choice == '1':
@@ -519,7 +544,7 @@ if __name__ == "__main__":
     print("Decoded matrix:")
     for i, row in enumerate(decoded_matrix):
         print(f"{decoded_names[i]} →", ' '.join(map(str, row)))
-    
+
     # Provide insights
     analyze_debt_matrix(adjacency_matrix, node_names)
 
@@ -532,68 +557,71 @@ if __name__ == "__main__":
         if start_node not in node_names.values() or second_node not in node_names.values():
             print("❌ One or both names not found.")
         else:
-            find_debt_cycle_shortest_back(adjacency_matrix, node_names, start_node, second_node)
+            cycle = find_debt_cycle_shortest_back(adjacency_matrix, node_names, start_node, second_node)
+            if cycle:
+                suggest_settlements_from_cycle(adjacency_matrix, node_names, cycle)
 
-    cycle = find_debt_cycle_shortest_back(adjacency_matrix, node_names, start_node, second_node)
-    if cycle:
-        suggest_settlements_from_cycle(adjacency_matrix, node_names, cycle)
-        
                 # === OPTIONAL: Send encrypted condonation email ===
-        secure_email_choice = input("\n📧 Do you want to send a secure condonation email? (y/n): ").strip().lower()
-        if secure_email_choice == 'y':
-            
-            # Recompute min_transfer
-            name_to_index = {v: k for k, v in node_names.items()}
-            min_transfer = float('inf')
-            for i in range(len(cycle) - 1):
-                u = name_to_index[cycle[i]]
-                v = name_to_index[cycle[i + 1]]
-                min_transfer = min(min_transfer, adjacency_matrix[u][v])
+                secure_email_choice = input("\n📧 Do you want to send a secure condonation email? (y/n): ").strip().lower()
+                if secure_email_choice == 'y':
+                    # Recompute min_transfer with wrap-around
+                    name_to_index = {v: k for k, v in node_names.items()}
+                    min_transfer = min(
+                        adjacency_matrix[name_to_index[cycle[i]]][name_to_index[cycle[(i + 1) % len(cycle)]]]
+                        for i in range(len(cycle))
+                    )
 
-            # Generate email content
-            email_body = generate_condonation_email(cycle, min_transfer)
-            print("\n📄 Email Body to Encrypt:\n", email_body)
+                    # Generate email content
+                    email_body = generate_condonation_email(cycle, min_transfer)
+                    print("\n📄 Email Body to Encrypt:\n", email_body)
 
-            # Quantum-safe key encapsulation
-            # Post-quantum key exchange
-            kem = MLKEM_512()
-            public_key, secret_key = kem.keygen()
-            ciphertext, shared_secret_sender = kem.encaps(public_key)
-            shared_secret_receiver = kem.decaps(secret_key, ciphertext)
+                    # Quantum-safe key encapsulation
+                    kem = MLKEM_512()
+                    public_key, secret_key = kem.keygen()
+                    ciphertext, shared_secret_sender = kem.encaps(public_key)
+                    shared_secret_receiver = kem.decaps(secret_key, ciphertext)
 
-            # Encrypt message body
-            encrypted = encrypt_message(email_body, shared_secret_sender)
-            print("\n🔐 Encrypted Email (Base64):\n", encrypted)
+                    # Encrypt message body
+                    encrypted = encrypt_message(email_body, shared_secret_sender)
+                    print("\n🔐 Encrypted Email (Base64):\n", encrypted)
 
-            # Construct HTML email
-            html_body = f"""
-            <h2>🔐 Encrypted Condonation Email</h2>
-            <p>This message has been encrypted using post-quantum AES-256 derived from ML-KEM-512.</p>
-            <p><strong>Participants in the cycle:</strong> {' → '.join(cycle)} → {cycle[0]}</p>
-            <pre style="background-color:#f4f4f4;padding:10px;border:1px solid #ccc;">{encrypted}</pre>
-            <p>Each recipient must use the corresponding decryption key to view the message.</p>
-            """
+                    # Construct HTML email (showing the closed ring for clarity)
+                    ring = cycle + [cycle[0]]
+                    html_body = f"""
+                    <h2>🔐 Encrypted Condonation Email</h2>
+                    <p>This message has been encrypted using post-quantum AES-256 derived from ML-KEM-512.</p>
+                    <p><strong>Participants in the cycle:</strong> {' → '.join(ring)}</p>
+                    <pre style="background-color:#f4f4f4;padding:10px;border:1px solid #ccc;">{encrypted}</pre>
+                    <p>Each recipient must use the corresponding decryption key to view the message.</p>
+                    """
 
-            # Build recipients list: include each cycle participant at {name}@cybereu.eu
-            to_emails = list({f"{name}@cybereu.eu" for name in cycle})
+                    # Recipients list: include each cycle participant at {name}@cybereu.eu
+                    to_emails = list({f"{name}@cybereu.eu" for name in cycle})
 
-            # Loop through recipients
-            for recipient_email in to_emails:
-                send_email_via_postmark_http(
-                    server_token="dfc99995-7d73-45d0-8bfa-7e6a0f8ad335",
-                    from_email="info@cybereu.eu",
-                    to_email=recipient_email,
-                    subject="🔐 Encrypted Condonation Suggestion",
-                    html_body=html_body,
-                    message_stream="amoserver1messagestream"
-                )
+                    # Prefer server token from environment
+                    server_token = os.getenv("POSTMARK_SERVER_TOKEN")
+                    if not server_token:
+                        print("⚠️ POSTMARK_SERVER_TOKEN not set; skipping email sending.")
+                    else:
+                        for recipient_email in to_emails:
+                            send_email_via_postmark_http(
+                                server_token=server_token,
+                                from_email="info@cybereu.eu",
+                                to_email=recipient_email,
+                                subject="🔐 Encrypted Condonation Suggestion",
+                                html_body=html_body,
+                                message_stream=os.getenv("POSTMARK_STREAM", "amoserver1messagestream"),
+                            )
 
-            # Decrypt and verify
-            decrypted = decrypt_message(encrypted, shared_secret_receiver)
-            print("\n🔓 Decrypted Email Message:\n", decrypted)
+                        print("📧 Emails sent (via Postmark).")
 
-            # Apply settlements
-            apply_cycle_settlement(adjacency_matrix, node_names, cycle)
-        else:
-            print("🕊️ Secure email skipped.")
+                    # Decrypt and verify
+                    decrypted = decrypt_message(encrypted, shared_secret_receiver)
+                    print("\n🔓 Decrypted Email Message:\n", decrypted)
 
+                    # Apply settlements
+                    apply_cycle_settlement(adjacency_matrix, node_names, cycle)
+                else:
+                    print("🕊️ Secure email skipped.")
+    else:
+        print("🔎 Cycle search skipped.")
