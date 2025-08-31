@@ -1,5 +1,9 @@
-# Bridge-Embedded Block Diagonal Merge (BEBDiM) 
+# Interconnection of 2 payment networks by the Merge Authority using so called Bridge-Embedded Block Diagonal Merge (BEBDiM) 
 # In order to interconnect 2 payment networks, the following process is innovated. This process is named "Bridge-Embedded Block Diagonal Merge"
+#
+# An adjacency matrix is a way of representing a graph (a network of nodes and edges) in the form of a square matrix
+# Suppose you have a graph with n nodes (vertices). You build an n × n matrix A. Each entry A[i][j] tells you whether there is an edge (connection) from node i to node j. 
+#
 # A block matrix composition, is specifically a type of block diagonal concatenation or matrix embedding.
 # Operation: Block Matrix Construction / Embedding also named 'Bridge-Embedded Block Diagonal Merge'.
 # Block Diagonal Merge: It means that you are performing a block diagonal embedding of two square matrices (A and B) into a larger square matrix.
