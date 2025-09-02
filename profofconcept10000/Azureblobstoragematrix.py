@@ -3,7 +3,7 @@
 # Upload to an Azure Blob Container.
 # Download back and restore into NumPy
 # Set environment variables (for safety, don’t hardcode keys):
-# export AZURE_STORAGE_CONNECTION_STRING="your-connection-string" for instance DefaultEndpointsProtocol=https;AccountName=amomatrixstorage;AccountKey=ic1fy617RPPCHKiwyIck1kG6a7Afrc8Z4gcd+TSjN/Kz81naAfCUygFHUdjGjLUES/eCveLJl/N7+AStmb9u4Q==;EndpointSuffix=core.windows.net
+# export AZURE_STORAGE_CONNECTION_STRING="your-connection-string" 
 
 import os, io, uuid, numpy as np
 from azure.storage.blob import BlobServiceClient
