@@ -42,7 +42,8 @@
 # Input: A randomly generated adjacency matrix (100x100) with integer weights (max 100),
 # where matrix[i][j] > 0 indicates a directed edge from node i to node j
 # Output: a) All shortest paths from Pedro (node 0) to all others. b) The shortest path from Pedro (0) to Valentina (12)
-#
+# Note: Graph direction: Graph(directed=True). Edges are one-way.
+# “No edge” sentinel: Edges are created only where weight > 0. So 0 means no edge. Zero-cost edges are not supported with this builder.
 #
 # Import required libraries
 import numpy as np

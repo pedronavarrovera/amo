@@ -34,22 +34,48 @@
 # [ 0.  0.  8.  9. 10.]
 # [ 0.  0. 11. 12. 13.]]
 #
+# Note: Graph direction: Graph(directed=True). Edges are one-way.
+# “No edge” sentinel: Edges are created only where weight > 0. So 0 means no edge. Zero-cost edges are not supported with this builder.
+#
 import numpy as np
 from core_igraph import dijkstra_igraph_all, dijkstra_igraph_to_target  # Updated import
 
-def construct_matrix_with_A_top_left(A: np.ndarray, B: np.ndarray) -> np.ndarray:
-    a = A.shape[0]
-    b = B.shape[0]
+def construct_matrix_with_A_top_left(
+    A: np.ndarray,
+    B: np.ndarray,
+    *,
+    bridge_from_A: int = 0,
+    bridge_to_B: int = 0,
+    bridge_weight: float | int = 1,
+    bidirectional: bool = False,
+    use_inf_off_block: bool = False
+) -> np.ndarray:
+    """
+    Place A in the top-left and B in the bottom-right of a larger adjacency matrix.
+    Optionally add a bridge between A[bridge_from_A] and B[bridge_to_B].
 
+    - If use_inf_off_block=True, off-block entries are set to np.inf (safer if the
+      Dijkstra loader treats 0 as a real zero-cost edge rather than 'no edge').
+    - If bidirectional=True, adds the reverse bridge as well.
+    """
+    a, b = A.shape[0], B.shape[0]
     assert A.shape == (a, a), "Matrix A must be square"
     assert B.shape == (b, b), "Matrix B must be square"
 
-    D = np.zeros((a + b, a + b))
+    # Pick a common dtype that preserves integer-ness if both are int
+    dtype = np.result_type(A.dtype, B.dtype, type(bridge_weight))
+
+    D = np.full((a + b, a + b), np.inf if use_inf_off_block else 0, dtype=dtype)
     D[:a, :a] = A
     D[a:, a:] = B
-    D[0, a] = 1  # Connect node 0 in A to node 0 in B
+
+    # Add bridge A[i] -> B[j]
+    D[bridge_from_A, a + bridge_to_B] = bridge_weight
+    if bidirectional:
+        D[a + bridge_to_B, bridge_from_A] = bridge_weight
 
     return D
+
 
 def construct_node_name_with_A_B(node_namesA: dict, node_namesB: dict) -> dict:
     node_namesD = {i: name for i, name in node_namesA.items()}
