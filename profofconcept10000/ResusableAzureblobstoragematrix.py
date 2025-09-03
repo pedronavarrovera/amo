@@ -1,10 +1,17 @@
 # ResusableAzureblobstoragematrix.py
+# Usage example (overwriting the same blob):
+#   modify_matrix_entry("matrix-code-1234.b64", i=2, j=5, value=42)
+# Or save to a new blob:
+#   modify_matrix_entry("matrix-code-1234.b64", 2, 5, 42, out_blob_name="matrix-code-updated.b64")
+#
 import os
 import io
 import uuid
+import base64
 from typing import Optional
 from azure.storage.blob import BlobServiceClient, ContentSettings
 from azure.core.exceptions import ResourceExistsError
+import numpy as np
 
 # ---------- Config ----------
 def _get_connection_string() -> str:
@@ -75,3 +82,42 @@ def list_codes(container_name: str = DEFAULT_CONTAINER) -> list[str]:
     container = _get_container(container_name)
     return [b.name for b in container.list_blobs()]
 
+def modify_matrix_entry(
+    blob_name: str,
+    i: int,
+    j: int,
+    value: float | int,
+    *,
+    container_name: str = DEFAULT_CONTAINER,
+    out_blob_name: Optional[str] = None
+) -> str:
+    """
+    Downloads a Base64-encoded NumPy .npy matrix from Azure Blob Storage, modifies A[i][j],
+    and uploads the resulting matrix (as Base64 text) back to Azure using the existing helpers.
+
+    By default, overwrites the same blob. To write to a new blob, pass `out_blob_name`.
+    Returns the blob name that was written.
+    """
+    # 1) Download the base64 string
+    b64 = download_base64_code(blob_name, container_name=container_name)
+
+    # 2) Decode base64 -> bytes and load NumPy array
+    raw = base64.b64decode(b64)
+    arr = np.load(io.BytesIO(raw), allow_pickle=False)
+
+    # 3) Bounds check (kept simple)
+    if i < 0 or j < 0 or i >= arr.shape[0] or j >= arr.shape[1]:
+        raise IndexError(f"indices ({i}, {j}) out of bounds for shape {arr.shape}")
+
+    # 4) Modify the entry
+    arr[i, j] = value
+
+    # 5) Save array back to .npy bytes
+    buf = io.BytesIO()
+    np.save(buf, arr)
+    buf.seek(0)
+    new_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+    # 6) Upload using existing helper (overwrite by default)
+    target_name = out_blob_name or blob_name
+    return upload_base64_code(new_b64, blob_name=target_name, container_name=container_name)
