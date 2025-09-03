@@ -1,0 +1,45 @@
+# Cyclos Access Clients
+# An admin enables Access clients for your users and you (or the user) create an access client in Cyclos, which gives a 4-digit activation code.
+# Your backend activates it once via: POST /api/clients/activate?code=XXXX using HTTP Basic (the user’s username+password)
+# The response returns an access client token. Store it securely
+# Use that token on every API call via header Access-Client-Token: <token> (optionally also the Channel header)
+# Token stays valid until the access client is blocked/disabled
+# One-time activation script (run once to mint the token)
+# Endpoint, Basic auth, and return value (the token) are exactly per the docs. 
+# You’ll pass this token in the Access-Client-Token header later. 
+# Tokens remain valid until revoked. You can also add a prefix query param (e.g., a device ID) to bind the token to a known identifier.
+# Use the token to call the REST API (balance + transactions)
+
+import os
+import requests
+
+# Use the token to call the REST API (balance + transactions)
+BASE = "https://your-cyclos.example.com/api"  # this one points at /api now
+ACCESS_CLIENT_TOKEN = os.environ["CYCLOS_ACCESS_CLIENT_TOKEN"]  # set from your secrets
+HEADERS = {
+    "Access-Client-Token": ACCESS_CLIENT_TOKEN,
+    # Optional: tell Cyclos which channel this client represents.
+    # If omitted, channel defaults to Web Services.
+    # "Channel": "webServices"
+}
+
+# 1) List accounts for the authenticated user (owner=self)
+accounts_resp = requests.get(f"{BASE}/self/accounts", headers=HEADERS, timeout=20)
+accounts_resp.raise_for_status()
+accounts = accounts_resp.json()
+print("Accounts:", accounts)
+
+# Pick an account type (internal name or id)
+account_type = accounts[0]["type"]["internalName"]
+
+# 2) Account status (contains balance, credit limit, etc.)
+status_resp = requests.get(f"{BASE}/self/accounts/{account_type}", headers=HEADERS, timeout=20)
+status_resp.raise_for_status()
+status = status_resp.json()
+print("Balance/status:", status)
+
+# 3) Account history (transactions)
+history_resp = requests.get(f"{BASE}/self/accounts/{account_type}/history", headers=HEADERS, timeout=20)
+history_resp.raise_for_status()
+history = history_resp.json()
+print("Transactions:", history)
