@@ -14,7 +14,7 @@ import os
 import requests
 
 # Use the token to call the REST API (balance + transactions)
-BASE = "https://your-cyclos.example.com/api"  # this one points at /api now
+BASE = "https://communities.cyclos.org/api"  # this one points at /api now
 ACCESS_CLIENT_TOKEN = os.environ["CYCLOS_ACCESS_CLIENT_TOKEN"]  # set from your secrets
 HEADERS = {
     "Access-Client-Token": ACCESS_CLIENT_TOKEN,
