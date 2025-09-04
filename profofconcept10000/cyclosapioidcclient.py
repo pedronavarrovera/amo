@@ -1,3 +1,15 @@
+# Cyclos exposes OIDC discovery and these endpoints:
+# Well-known: https://your-cyclos.example/.well-known/openid-configuration
+# Authorize: …/api/oidc/authorize
+# Token: …/api/oidc/token
+# UserInfo: …/api/oidc/userinfo
+#
+#
+#
+#
+#
+#
+#
 import os
 from urllib.parse import urljoin
 
@@ -56,6 +68,16 @@ def auth_callback():
     # Exchanges the authorization code for tokens (handles PKCE automatically)
     token = oauth.cyclos.authorize_access_token()
     session["token"] = token
+    #
+    token = oauth.cyclos.authorize_access_token()
+    print("granted scopes:", token.get("scope"))  # e.g., "openid profile email account_status"
+    session["token"] = token
+
+    # sanity: call userinfo to be sure the token works at all
+    userinfo = oauth.cyclos.userinfo(token=token)
+    print("userinfo ok:", userinfo.get("sub"))
+    session["user"] = userinfo
+    
     # Fetch OIDC userinfo
     userinfo = oauth.cyclos.userinfo(token=token)
     session["user"] = userinfo
@@ -83,6 +105,9 @@ def accounts():
     if "token" not in session:
         return redirect(url_for("login"))
     access_token = session["token"]["access_token"]
+    
+    
+
     # Depending on your setup, the accounts endpoint may be /api/self/accounts
     # (owner=self). Adjust to your instance paths / version as needed.
     url = f"{CYCLOS_BASE}/api/self/accounts"
