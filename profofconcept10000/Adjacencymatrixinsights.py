@@ -467,6 +467,40 @@ def apply_cycle_settlement(matrix, node_names, cycle):
         print("    " + str(row) + ",")
     print("]")
 
+def apply_cycle_settlement_return_b64(matrix, node_names, cycle):
+    """
+    Apply settlements to cancel a cycle by subtracting the minimum transferable amount
+    from each debt in the cycle. Modifies the matrix in place and returns the updated
+    matrix encoded as Base64(JSON{nodes, matrix}).
+    """
+    cycle = canonicalize_cycle(cycle)
+    if not cycle or len(cycle) < 2:
+        print("⚠️ Invalid cycle.")
+        return ""
+
+    name_to_index = {v: k for k, v in node_names.items()}
+
+    min_transfer = min(
+        matrix[name_to_index[cycle[i]]][name_to_index[cycle[(i + 1) % len(cycle)]]]
+        for i in range(len(cycle))
+    )
+
+    for i in range(len(cycle)):
+        u = name_to_index[cycle[i]]
+        v = name_to_index[cycle[(i + 1) % len(cycle)]]
+        matrix[u][v] -= min_transfer
+
+    print(f"\n🔧 Applied settlement: {min_transfer} removed from each link in the cycle.")
+    print("✅ Updated matrix reflects reduced debts in this cycle.")
+    print("\nUpdated matrix= [")
+    for row in matrix:
+        print("    " + str(row) + ",")
+    print("]")
+
+    # Encode and return the final matrix as Base64
+    encoded_b64 = encode_adjacency_matrix(matrix, node_names)
+    return encoded_b64
+
 
 # ==========================
 # Email body generator (fixed not to double-close)
