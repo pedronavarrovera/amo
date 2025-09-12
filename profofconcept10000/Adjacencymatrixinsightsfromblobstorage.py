@@ -172,6 +172,8 @@ import os
 import base64
 import json
 import networkx as nx
+from datetime import datetime, timezone  # for naming the updated matrix with a timestamp
+
 
 from core_igraph import dijkstra_igraph_to_target
 from networkplot_igraph import visualize_path_directed
@@ -414,6 +416,40 @@ def apply_cycle_settlement(matrix, node_names, cycle):
         print("    " + str(row) + ",")
     print("]")
 
+def apply_cycle_settlement_return_b64(matrix, node_names, cycle):
+    """
+    Same logic as apply_cycle_settlement, but returns the final matrix
+    encoded as Base64(JSON{nodes, matrix}) using encode_adjacency_matrix.
+    If the cycle is invalid, returns the Base64 of the unchanged matrix.
+    """
+    cycle = canonicalize_cycle(cycle)
+    if not cycle or len(cycle) < 2:
+        print("⚠️ Invalid cycle.")
+        return encode_adjacency_matrix(matrix, node_names)
+
+    name_to_index = {v: k for k, v in node_names.items()}
+
+    min_transfer = min(
+        matrix[name_to_index[cycle[i]]][name_to_index[cycle[(i + 1) % len(cycle)]]]
+        for i in range(len(cycle))
+    )
+
+    for i in range(len(cycle)):
+        u = name_to_index[cycle[i]]
+        v = name_to_index[cycle[(i + 1) % len(cycle)]]
+        matrix[u][v] -= min_transfer
+
+    print(f"\n🔧 Applied settlement: {min_transfer} removed from each link in the cycle.")
+    print("✅ Updated matrix reflects reduced debts in this cycle.")
+    print("\nUpdated matrix= [")
+    for row in matrix:
+        print("    " + str(row) + ",")
+    print("]")
+
+    # Encode and return the final matrix as Base64
+    return encode_adjacency_matrix(matrix, node_names)
+
+
 # ==========================
 # Email body generator
 # ==========================
@@ -577,7 +613,25 @@ if __name__ == "__main__":
                     decrypted = decrypt_message(encrypted, shared_secret_receiver)
                     print("\n🔓 Decrypted Email Message:\n", decrypted)
 
-                    apply_cycle_settlement(adjacency_matrix, node_names, cycle)
+                #   apply_cycle_settlement(adjacency_matrix, node_names, cycle)
+                    # --- Apply settlement and upload final matrix to Blob Storage ---
+                    # Use the function that returns the updated matrix encoded in Base64
+                    updated_b64 = apply_cycle_settlement_return_b64(adjacency_matrix, node_names, cycle)
+
+                    # Build a clean timestamped filename (UTC to avoid TZ ambiguity)
+                    base = input("\n📝 Enter a base filename for the updated matrix (default: updated-matrix): ").strip() or "updated-matrix"
+                    if base.lower().endswith(".b64"):
+                        base = base[:-4]
+                    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+                    blob_name = f"{base}-{ts}.b64"
+
+                    # Upload using your existing helper
+                    try:
+                        # If you want a specific container, pass container_name="matrices" (or your value)
+                        upload_base64_code(updated_b64, blob_name=blob_name)
+                        print(f"☁️ Uploaded updated matrix to blob: {blob_name}")
+                    except Exception as e:
+                        print(f"❌ Failed to upload updated matrix: {e}")
                 else:
                     print("🕊️ Secure email skipped.")
     else:
