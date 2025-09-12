@@ -4,6 +4,13 @@
 # Or save to a new blob:
 #   modify_matrix_entry("matrix-code-1234.b64", 2, 5, 42, out_blob_name="matrix-code-updated.b64")
 #
+## overwrite value at (2,3) with 50
+# modify_matrix_entry("matrix-code-abc123.b64", 2, 3, 50)
+
+# add +10 to value at (2,3)
+# add_to_matrix_entry("matrix-code-abc123.b64", 2, 3, 10)
+
+#
 import os
 import io
 import uuid
@@ -81,6 +88,46 @@ def list_codes(container_name: str = DEFAULT_CONTAINER) -> list[str]:
     """
     container = _get_container(container_name)
     return [b.name for b in container.list_blobs()]
+
+def add_to_matrix_entry(
+    blob_name: str,
+    i: int,
+    j: int,
+    delta: float | int,
+    *,
+    container_name: str = DEFAULT_CONTAINER,
+    out_blob_name: Optional[str] = None
+) -> str:
+    """
+    Downloads a Base64-encoded NumPy .npy matrix from Azure Blob Storage,
+    adds `delta` to A[i][j], and uploads the resulting matrix (as Base64 text).
+
+    By default, overwrites the same blob. To write to a new blob, pass `out_blob_name`.
+    Returns the blob name that was written.
+    """
+    # 1) Download the base64 string
+    b64 = download_base64_code(blob_name, container_name=container_name)
+
+    # 2) Decode base64 -> bytes and load NumPy array
+    raw = base64.b64decode(b64)
+    arr = np.load(io.BytesIO(raw), allow_pickle=False)
+
+    # 3) Bounds check
+    if i < 0 or j < 0 or i >= arr.shape[0] or j >= arr.shape[1]:
+        raise IndexError(f"indices ({i}, {j}) out of bounds for shape {arr.shape}")
+
+    # 4) Add to the entry
+    arr[i, j] = arr[i, j] + delta
+
+    # 5) Save array back to .npy bytes
+    buf = io.BytesIO()
+    np.save(buf, arr)
+    buf.seek(0)
+    new_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+    # 6) Upload using existing helper (overwrite by default)
+    target_name = out_blob_name or blob_name
+    return upload_base64_code(new_b64, blob_name=target_name, container_name=container_name)
 
 def modify_matrix_entry(
     blob_name: str,
