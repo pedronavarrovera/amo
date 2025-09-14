@@ -605,19 +605,10 @@ if __name__ == "__main__":
             i = name_to_index[start_node]
             j = name_to_index[second_node]
 
-            # Propose timestamped output name (UTC)
-            base = input("\n📝 Enter a base filename for the updated matrix (default: payment-update): ").strip() or "payment-update"
-            if base.lower().endswith(".b64"):
-                base = base[:-4]
-            ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-            out_blob_name = f"{base}-{ts}.b64"
-
-
-
             # Execute the payment to generate the new matrix
             adjacency_matrix[i][j] += amount 
-
-             
+            # Generate new encoded code b64
+                       
             # Encode and return the final matrix as Base64
             updated_b64=encode_adjacency_matrix(adjacency_matrix, node_names)
             # Build a clean timestamped filename (UTC to avoid TZ ambiguity)
@@ -628,7 +619,7 @@ if __name__ == "__main__":
                 blob_name = f"{base}-{ts}.b64"
             
             print(f"\n💸 Applying payment {start_node} → {second_node} of {amount} on '{blob_name}'")
-            print(f"☁️ Writing updated matrix to: {out_blob_name}")
+            print(f"☁️ Writing updated matrix to: {blob_name}")
             # Upload using your existing helper
             try:
             # If you want a specific container, pass container_name="matrices" (or your value)
@@ -651,10 +642,11 @@ if __name__ == "__main__":
         print("    " + str(row) + ",")
     print("]")
 
+    # verify code
     print("\n📦 Encoded Base64 Code:")
-    print(encoded_code)
+    print(updated_b64)
 
-    # Decode to verify
+    # Decode to verify (same as option 3)
     decoded_matrix, decoded_names = decode_adjacency_code(encoded_code)
     validate_decoded_matrix(decoded_matrix)
     print("\n🔁 Decoded Verification:")
@@ -662,7 +654,7 @@ if __name__ == "__main__":
     print("Decoded matrix:")
     for i, row in enumerate(decoded_matrix):
         print(f"{decoded_names[i]} →", ' '.join(map(str, row)))
-
+    
     # Provide insights
     analyze_debt_matrix(adjacency_matrix, node_names)
 
