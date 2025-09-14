@@ -616,7 +616,7 @@ if __name__ == "__main__":
 
             # Strip .b64 if user typed it
             if base.lower().endswith(".b64"):
-            base = base[:-4]
+                base = base[:-4]
 
             # Always generate timestamped name
             ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
@@ -632,35 +632,37 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"❌ Failed to upload updated matrix: {e}")
             #
+            # Display results
+            print("\n✅ Variables stored as Python code:")
+            print("node_names =")
+            print(node_names)
+            print("\nadjacency_matrix = [")
+            for row in adjacency_matrix:
+                print("    " + str(row) + ",")
+            print("]")
+
+            # verify code
+            print("\n📦 Encoded Base64 Code:")
+            print(updated_b64)
+
+            # Decode to verify (same as option 3)
+            decoded_matrix, decoded_names = decode_adjacency_code(updated_b64)
+            validate_decoded_matrix(decoded_matrix)
+            print("\n🔁 Decoded Verification:")
+            print("Decoded node names:", decoded_names)
+            print("Decoded matrix:")
+            for i, row in enumerate(decoded_matrix):
+                print(f"{decoded_names[i]} →", ' '.join(map(str, row)))
+            
+            # Provide insights
+            analyze_debt_matrix(adjacency_matrix, node_names)
+
         else:
             print("💳 Payment step skipped.")
     else:
         raise ValueError("Invalid option selected.")
 
-    # Display results
-    print("\n✅ Variables stored as Python code:")
-    print("node_names =")
-    print(node_names)
-    print("\nadjacency_matrix = [")
-    for row in adjacency_matrix:
-        print("    " + str(row) + ",")
-    print("]")
 
-    # verify code
-    print("\n📦 Encoded Base64 Code:")
-    print(updated_b64)
-
-    # Decode to verify (same as option 3)
-    decoded_matrix, decoded_names = decode_adjacency_code(updated_b64)
-    validate_decoded_matrix(decoded_matrix)
-    print("\n🔁 Decoded Verification:")
-    print("Decoded node names:", decoded_names)
-    print("Decoded matrix:")
-    for i, row in enumerate(decoded_matrix):
-        print(f"{decoded_names[i]} →", ' '.join(map(str, row)))
-    
-    # Provide insights
-    analyze_debt_matrix(adjacency_matrix, node_names)
 
     # === OPTIONAL: Find specific A → B → shortest path back to A cycle ===
     user_choice = input("\n🔎 Do you want to find a cycle A → B → shortest path back to A? (y/n): ").strip().lower()
