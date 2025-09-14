@@ -183,7 +183,7 @@ from communicationsviaemail import send_email_via_postmark_http
 
 # NEW: import blob helpers
 from ResusableAzureblobstoragematrix import upload_base64_code, download_base64_code, list_codes
-from ResusableAzureblobstoragematrix import add_to_matrix_entry
+# from ResusableAzureblobstoragematrix import add_to_matrix_entry
 
 
 # ==========================
@@ -611,12 +611,16 @@ if __name__ == "__main__":
                        
             # Encode and return the final matrix as Base64
             updated_b64=encode_adjacency_matrix(adjacency_matrix, node_names)
-            # Build a clean timestamped filename (UTC to avoid TZ ambiguity)
+           # Build a clean timestamped filename (UTC to avoid TZ ambiguity)
             base = input("\n📝 Enter a base filename for the updated matrix (default: updated-matrix): ").strip() or "updated-matrix"
+
+            # Strip .b64 if user typed it
             if base.lower().endswith(".b64"):
-                base = base[:-4]
-                ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-                blob_name = f"{base}-{ts}.b64"
+            base = base[:-4]
+
+            # Always generate timestamped name
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+            blob_name = f"{base}-{ts}.b64"
             
             print(f"\n💸 Applying payment {start_node} → {second_node} of {amount} on '{blob_name}'")
             print(f"☁️ Writing updated matrix to: {blob_name}")
@@ -647,7 +651,7 @@ if __name__ == "__main__":
     print(updated_b64)
 
     # Decode to verify (same as option 3)
-    decoded_matrix, decoded_names = decode_adjacency_code(encoded_code)
+    decoded_matrix, decoded_names = decode_adjacency_code(updated_b64)
     validate_decoded_matrix(decoded_matrix)
     print("\n🔁 Decoded Verification:")
     print("Decoded node names:", decoded_names)
