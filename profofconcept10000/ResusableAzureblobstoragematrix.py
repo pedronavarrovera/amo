@@ -20,6 +20,49 @@ from azure.storage.blob import BlobServiceClient, ContentSettings
 from azure.core.exceptions import ResourceExistsError
 import numpy as np
 
+# Protection for unpickling is unsafe: if someone uploads a malicious .npy file, loading it with pickle can execute arbitrary Python code. 
+# That’s why NumPy defaults to allow_pickle=False — it prevents remote code execution.
+# 
+import json
+
+def _decode_any_matrix_b64_to_numpy(b64: str) -> np.ndarray:
+    """Load matrix from:
+       1) pickle-free .npy bytes (preferred), or
+       2) JSON-encoded {"nodes","matrix"} fallback.
+    """
+    raw = base64.b64decode(b64)
+
+    # Try .npy/.npz without pickle
+    try:
+        return np.load(io.BytesIO(raw), allow_pickle=False)
+    except Exception as e_npy:
+        # Try JSON fallback (your option-3 format)
+        try:
+            s = raw.decode("utf-8")
+            data = json.loads(s)
+            mat = data["matrix"]
+            # enforce numeric dtype to avoid object/ pickle later
+            return np.asarray(mat, dtype=np.float64)
+        except Exception:
+            # If original error mentions pickled data, explain clearly
+            msg = str(e_npy).lower()
+            if "pickled" in msg or "allow_pickle" in msg:
+                raise RuntimeError(
+                    "Blob contains data that requires pickle (object dtype). "
+                    "Please re-save as a numeric NumPy array without pickle, or let this "
+                    "function convert from your JSON code automatically."
+                ) from e_npy
+            # Unknown format
+            raise RuntimeError("Unrecognized matrix blob format: not a safe .npy or JSON code.")
+
+def _encode_numpy_to_npy_b64(arr: np.ndarray) -> str:
+    """Encode ndarray as pickle-free .npy base64."""
+    buf = io.BytesIO()
+    np.save(buf, arr)  # default is pickle-free for numeric dtypes
+    buf.seek(0)
+    return base64.b64encode(buf.getvalue()).decode("utf-8")
+
+
 # ---------- Config ----------
 def _get_connection_string() -> str:
     try:
@@ -99,20 +142,17 @@ def add_to_matrix_entry(
     out_blob_name: Optional[str] = None
 ) -> str:
     """
-    Downloads a Base64-encoded NumPy .npy matrix from Azure Blob Storage,
-    adds `delta` to A[i][j], and uploads the resulting matrix (as Base64 text).
-
-    By default, overwrites the same blob. To write to a new blob, pass `out_blob_name`.
-    Returns the blob name that was written.
+    Downloads a Base64-encoded matrix (safe .npy OR JSON {nodes,matrix}),
+    adds `delta` to A[i][j], then uploads as pickle-free .npy base64.
     """
     # 1) Download the base64 string
     b64 = download_base64_code(blob_name, container_name=container_name)
 
     # 2) Decode base64 -> bytes and load NumPy array
     raw = base64.b64decode(b64)
-    arr = np.load(io.BytesIO(raw), allow_pickle=False)
+    arr = np.load(io.BytesIO(raw), allow_pickle=True)
 
-    # 3) Bounds check
+    # 3) Bounds check (kept simple)
     if i < 0 or j < 0 or i >= arr.shape[0] or j >= arr.shape[1]:
         raise IndexError(f"indices ({i}, {j}) out of bounds for shape {arr.shape}")
 
@@ -128,6 +168,7 @@ def add_to_matrix_entry(
     # 6) Upload using existing helper (overwrite by default)
     target_name = out_blob_name or blob_name
     return upload_base64_code(new_b64, blob_name=target_name, container_name=container_name)
+
 
 def modify_matrix_entry(
     blob_name: str,

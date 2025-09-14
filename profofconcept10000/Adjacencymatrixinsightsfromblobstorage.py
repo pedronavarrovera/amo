@@ -183,6 +183,8 @@ from communicationsviaemail import send_email_via_postmark_http
 
 # NEW: import blob helpers
 from ResusableAzureblobstoragematrix import upload_base64_code, download_base64_code, list_codes
+from ResusableAzureblobstoragematrix import add_to_matrix_entry
+
 
 # ==========================
 # Helpers & Core Utilities
@@ -392,6 +394,7 @@ def suggest_settlements_from_cycle(matrix, node_names, cycle):
 
     print(f"\n✅ Either option will remove {min_transfer} from each link in the cycle.")
 
+# not in use - instead use the same logic as apply_cycle_settlement, but returns the final matrix see apply_cycle_settlement_return_b64
 def apply_cycle_settlement(matrix, node_names, cycle):
     cycle = canonicalize_cycle(cycle)
     if not cycle or len(cycle) < 2:
@@ -416,6 +419,7 @@ def apply_cycle_settlement(matrix, node_names, cycle):
         print("    " + str(row) + ",")
     print("]")
 
+# use this one - same logic as apply_cycle_settlement, but returns the final matrix
 def apply_cycle_settlement_return_b64(matrix, node_names, cycle):
     """
     Same logic as apply_cycle_settlement, but returns the final matrix
@@ -490,8 +494,10 @@ if __name__ == "__main__":
     print("1. Enter matrix and nodes manually")
     print("2. Paste encoded base64 code e.g. eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiRGF2aWQifSwgIm1hdHJpeCI6IFtbMCwgMTAsIDBdLCBbMTAsIDAsIDEwXSwgWzAsIDEwLCAwXV19")
     print("3. Download from Blob Storage a matrix encoded Base64 code (you’ll provide the blob name)")
+    print("4. Download from Blob Storage and execute a payment A → B (skip cycle search)")
 
-    choice = input("Select an option (1, 2 or 3): ").strip()
+
+    choice = input("Select an option (1, 2, 3 or 4): ").strip()
 
     if choice == '1':
         n = int(input("Enter number of nodes: "))
@@ -528,6 +534,108 @@ if __name__ == "__main__":
         print("\n✅ Blob code successfully decoded.")
         validate_decoded_matrix(adjacency_matrix)
 
+    elif choice == '4':
+        # Same listing / selection UX as option 3
+        print("\n📦 Available blob names (text codes) in the container (if listing is permitted):")
+        try:
+            names = list_codes()
+            for nm in names:
+                print(" -", nm)
+        except Exception as e:
+            print(f"(Listing skipped: {e})")
+
+        blob_name = input("Enter the blob name to download (e.g., initial-matrix.b64): ").strip()
+        print(f"☁️ Downloading Base64 code from blob: {blob_name}")
+        try:
+            code = download_base64_code(blob_name)
+        except Exception as e:
+            raise SystemExit(f"❌ Failed to download blob '{blob_name}': {e}")
+
+        # Decode exactly like option 3 to obtain node_names and matrix (for display/validation)
+        adjacency_matrix, node_names = decode_adjacency_code(code)
+        encoded_code = code
+        print("\n✅ Blob code successfully decoded.")
+        validate_decoded_matrix(adjacency_matrix)
+
+        # Show current data (like option 3)
+        print("\n✅ Variables stored as Python code:")
+        print("node_names =")
+        print(node_names)
+        print("\nadjacency_matrix = [")
+        for row in adjacency_matrix:
+            print("    " + str(row) + ",")
+        print("]")
+
+        print("\n📦 Encoded Base64 Code:")
+        print(encoded_code)
+
+        # Decode to verify (same as option 3)
+        decoded_matrix, decoded_names = decode_adjacency_code(encoded_code)
+        validate_decoded_matrix(decoded_matrix)
+        print("\n🔁 Decoded Verification:")
+        print("Decoded node names:", decoded_names)
+        print("Decoded matrix:")
+        for i, row in enumerate(decoded_matrix):
+            print(f"{decoded_names[i]} →", ' '.join(map(str, row)))
+
+        # Provide insights
+        analyze_debt_matrix(adjacency_matrix, node_names)
+
+        # === NEW: Offer a direct payment instead of cycle search ===
+        pay_choice = input("\n💳 Do you want to do a payment A → B of a specific amount? (y/n): ").strip().lower()
+        if pay_choice == 'y':
+            print("Available node names:", list(node_names.values()))
+            start_node = input("Enter the starting node A (payer): ").strip()
+            second_node = input("Enter the second node B (receiver): ").strip()
+
+            if start_node not in node_names.values() or second_node not in node_names.values():
+                raise SystemExit("❌ One or both names not found in node_names.")
+
+            # Positive amount only
+            try:
+                amount_str = input("Enter the amount (positive only): ").strip()
+                amount = float(amount_str)
+                if amount <= 0:
+                    raise ValueError("Amount must be positive.")
+            except Exception as e:
+                raise SystemExit(f"❌ Invalid amount: {e}")
+
+            # Map names to indices
+            name_to_index = {v: k for k, v in node_names.items()}
+            i = name_to_index[start_node]
+            j = name_to_index[second_node]
+
+            # Propose timestamped output name (UTC)
+            base = input("\n📝 Enter a base filename for the updated matrix (default: payment-update): ").strip() or "payment-update"
+            if base.lower().endswith(".b64"):
+                base = base[:-4]
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+            out_blob_name = f"{base}-{ts}.b64"
+
+            print(f"\n💸 Applying payment {start_node} → {second_node} of {amount} on '{blob_name}'")
+            print(f"☁️ Writing updated matrix to: {out_blob_name}")
+
+            # Execute the payment to generate the new matrix
+            adjacency_matrix[i][j] += amount 
+                        
+            # Encode and return the final matrix as Base64
+            updated_b64=encode_adjacency_matrix(adjacency_matrix, node_names)
+            # Build a clean timestamped filename (UTC to avoid TZ ambiguity)
+            base = input("\n📝 Enter a base filename for the updated matrix (default: updated-matrix): ").strip() or "updated-matrix"
+            if base.lower().endswith(".b64"):
+                base = base[:-4]
+                ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+                blob_name = f"{base}-{ts}.b64"
+            # Upload using your existing helper
+            try:
+            # If you want a specific container, pass container_name="matrices" (or your value)
+               upload_base64_code(updated_b64, blob_name=blob_name)
+               print(f"☁️ Uploaded updated matrix to blob: {blob_name}")
+            except Exception as e:
+                print(f"❌ Failed to upload updated matrix: {e}")
+            #
+        else:
+            print("💳 Payment step skipped.")
     else:
         raise ValueError("Invalid option selected.")
 
