@@ -591,12 +591,12 @@ if __name__ == "__main__":
             if start_node not in node_names.values() or second_node not in node_names.values():
                 raise SystemExit("❌ One or both names not found in node_names.")
 
-            # Positive amount only
+            # Positive integer amount only
             try:
-                amount_str = input("Enter the amount (positive only): ").strip()
-                amount = float(amount_str)
+                amount_str = input("Enter the amount (positive integer only): ").strip()
+                amount = int(float(amount_str))   # allows "10" or "10.0", but stores as 10
                 if amount <= 0:
-                    raise ValueError("Amount must be positive.")
+                    raise ValueError("Amount must be a positive integer.")
             except Exception as e:
                 raise SystemExit(f"❌ Invalid amount: {e}")
 
@@ -612,12 +612,12 @@ if __name__ == "__main__":
             ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
             out_blob_name = f"{base}-{ts}.b64"
 
-            print(f"\n💸 Applying payment {start_node} → {second_node} of {amount} on '{blob_name}'")
-            print(f"☁️ Writing updated matrix to: {out_blob_name}")
+
 
             # Execute the payment to generate the new matrix
             adjacency_matrix[i][j] += amount 
-                        
+
+             
             # Encode and return the final matrix as Base64
             updated_b64=encode_adjacency_matrix(adjacency_matrix, node_names)
             # Build a clean timestamped filename (UTC to avoid TZ ambiguity)
@@ -626,6 +626,9 @@ if __name__ == "__main__":
                 base = base[:-4]
                 ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
                 blob_name = f"{base}-{ts}.b64"
+            
+            print(f"\n💸 Applying payment {start_node} → {second_node} of {amount} on '{blob_name}'")
+            print(f"☁️ Writing updated matrix to: {out_blob_name}")
             # Upload using your existing helper
             try:
             # If you want a specific container, pass container_name="matrices" (or your value)
