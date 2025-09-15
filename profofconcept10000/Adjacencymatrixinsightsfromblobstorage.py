@@ -533,6 +533,12 @@ if __name__ == "__main__":
         encoded_code = code
         print("\n✅ Blob code successfully decoded.")
         validate_decoded_matrix(adjacency_matrix)
+        # Provide insights
+        print("\nUpdated matrix= [")
+        for row in adjacency_matrix:
+            print("    " + str(row) + ",")
+        print("]")
+        analyze_debt_matrix(adjacency_matrix, node_names)
 
     elif choice == '4':
         # Same listing / selection UX as option 3
@@ -579,6 +585,10 @@ if __name__ == "__main__":
             print(f"{decoded_names[i]} →", ' '.join(map(str, row)))
 
         # Provide insights
+        print("\nUpdated matrix= [")
+        for row in adjacency_matrix:
+            print("    " + str(row) + ",")
+        print("]")
         analyze_debt_matrix(adjacency_matrix, node_names)
 
         # === NEW: Offer a direct payment instead of cycle search ===
