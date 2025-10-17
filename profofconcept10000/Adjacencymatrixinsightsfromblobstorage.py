@@ -482,6 +482,7 @@ def generate_condonation_email(cycle, min_transfer):
 if __name__ == "__main__":
     # (Optional) Upload an initial Base64-encoded matrix to blob (ONCE)
     # Provided by you:
+    # INITIAL_B64 = "eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiQW5kcmVhIiwgIjMiOiAiRGF2aWQiLCAiNCI6ICJFbGVuYSJ9LCAibWF0cml4IjogW1swLCAxMCwgMCwgMCwgMF0sIFswLCAwLCAyMCwgMCwgMF0sIFswLCAwLCAwLCAzMCwgMF0sIFswLCAwLCAwLCAwLCA0MF0sIFs1MCwgMCwgMCwgMCwgMF1dfQ=="
     INITIAL_B64 = "eyJub2RlcyI6IHsiMCI6ICJQZWRybyIsICIxIjogIlBpbGFyIiwgIjIiOiAiQW5kcmVhIiwgIjMiOiAiRGF2aWQiLCAiNCI6ICJFbGVuYSJ9LCAibWF0cml4IjogW1swLCAxMCwgMCwgMCwgMF0sIFswLCAwLCAyMCwgMCwgMF0sIFswLCAwLCAwLCAzMCwgMF0sIFswLCAwLCAwLCAwLCA0MF0sIFs1MCwgMCwgMCwgMCwgMF1dfQ=="
     if os.getenv("UPLOAD_INITIAL_B64", "0") == "1":
         try:
