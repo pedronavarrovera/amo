@@ -50,28 +50,83 @@ def encode_adjacency_matrix(matrix, node_names):
 
 def decode_adjacency_code(code):
     """
-    Decode a base64 string back into matrix and node names.
+    Decode a Base64 string into (matrix, node_names).
+
+    Supports both:
+      1) Combined object: {"nodes": {... or [...]}, "matrix": [[...]]}
+      2) Matrix-only: [[...]]  → auto-generate node names {0:"Node0",...}
     """
     decoded_str = base64.b64decode(code.encode('utf-8')).decode('utf-8')
     data = json.loads(decoded_str)
-    matrix = data['matrix']
-    node_names = {int(k): v for k, v in data['nodes'].items()}
+
+    # --- Case 1: matrix-only (list of lists) ---
+    if isinstance(data, list):
+        if not all(isinstance(row, list) for row in data):
+            raise ValueError("Matrix-only JSON must be a list of lists.")
+        n = len(data)
+        matrix = [[int(v) for v in row] for row in data]
+        node_names = {i: f"Node{i}" for i in range(n)}
+        return matrix, node_names
+
+    # --- Case 2: combined object with 'matrix' and 'nodes' ---
+    if not isinstance(data, dict):
+        raise ValueError("Unsupported JSON: expected object or list.")
+
+    if "matrix" not in data:
+        raise ValueError("Missing 'matrix' key in JSON object.")
+
+    matrix = [[int(v) for v in row] for row in data["matrix"]]
+
+    if "nodes" in data:
+        nodes_any = data["nodes"]
+        if isinstance(nodes_any, list):
+            node_names = {i: str(name) for i, name in enumerate(nodes_any)}
+        elif isinstance(nodes_any, dict):
+            node_names = {int(k): str(v) for k, v in nodes_any.items()}
+        else:
+            raise ValueError("'nodes' must be a list or dict.")
+    else:
+        node_names = {i: f"Node{i}" for i in range(len(matrix))}
+
     return matrix, node_names
 
-def validate_decoded_matrix(matrix):
+
+def validate_decoded_matrix(matrix, *, directed=True, report_asymmetry=False):
     """
-    Validate if the decoded matrix is square and symmetric.
+    Validate the decoded adjacency matrix.
+
+    - Always enforces squareness.
+    - If directed=True (default), we DO NOT require symmetry.
+      Optionally reports how many (i,j) have matrix[i][j] != matrix[j][i].
+    - If directed=False, we require symmetry.
+
+    Returns nothing; prints human-friendly diagnostics.
     """
     n = len(matrix)
-    is_square = all(len(row) == n for row in matrix)
-    is_symmetric = all(matrix[i][j] == matrix[j][i] for i in range(n) for j in range(n))
+    is_square = all(isinstance(row, list) and len(row) == n for row in matrix)
 
     if not is_square:
         print("❌ Error: Decoded matrix is not square.")
-    elif not is_symmetric:
-        print("⚠️ Warning: Decoded matrix is NOT symmetric.")
+        return
+
+    if directed:
+        if report_asymmetry:
+            asym = sum(
+                1
+                for i in range(n)
+                for j in range(i + 1, n)
+                if matrix[i][j] != matrix[j][i]
+            )
+            print(f"ℹ️ Directed graph detected. Asymmetric pairs: {asym}.")
+        else:
+            print("✅ Decoded matrix is square (directed; symmetry not required).")
     else:
-        print("✅ Decoded matrix is valid and symmetric.")
+        is_symmetric = all(matrix[i][j] == matrix[j][i] for i in range(n) for j in range(n))
+        if not is_symmetric:
+            print("❌ Error: Expected an undirected (symmetric) matrix, but it is NOT symmetric.")
+        else:
+            print("✅ Decoded matrix is valid and symmetric (undirected).")
+
 
 # === MAIN EXECUTION ===
 if __name__ == "__main__":
@@ -91,7 +146,11 @@ if __name__ == "__main__":
         adjacency_matrix, node_names = decode_adjacency_code(code)
         encoded_code = code
         print("\n✅ Code successfully decoded.")
-        validate_decoded_matrix(adjacency_matrix)
+        # For BEBDiM output (directed):
+        validate_decoded_matrix(adjacency_matrix, directed=True, report_asymmetry=True)
+
+        # If you ever expect an undirected graph, use:
+        # validate_decoded_matrix(adjacency_matrix, directed=False)
 
     else:
         raise ValueError("Invalid option selected.")
